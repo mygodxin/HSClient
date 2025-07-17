@@ -31,7 +31,6 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4848923452971346793}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -109,15 +108,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -169,7 +170,6 @@ RectTransform:
   m_Children:
   - {fileID: 4848923454632139084}
   m_Father: {fileID: 4848923452956944724}
-  m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -280,8 +280,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4848923452956944724}
-  - component: {fileID: 2374479593786943093}
-  - component: {fileID: 963089857796700844}
+  - component: {fileID: -823098619924096288}
   m_Layer: 5
   m_Name: LoginScene
   m_TagString: Untagged
@@ -306,14 +305,13 @@ RectTransform:
   - {fileID: 4848923453894657391}
   - {fileID: 4848923452690262884}
   m_Father: {fileID: 0}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: -1180, y: -312}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &2374479593786943093
+--- !u!114 &-823098619924096288
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -322,46 +320,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 4848923452956944727}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b0dceee2b7a437240b1ffcc9396af650, type: 3}
+  m_Script: {fileID: 11500000, guid: 054b6b1d4d5bfbc4fa80507a44ca2d0a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _setup: 1
-  _collectorTypeName: Collect
-  _fieldNamePrefix: _
-  _fieldNameByType: 0
-  _fieldNames:
-  - _exitButton
-  - _startButton
-  - _settingButton
-  - _startTMP
-  _fieldComponents:
-  - {fileID: 4848923452971346790}
-  - {fileID: 4848923453894657388}
-  - {fileID: 4848923452690262885}
-  - {fileID: 4848923453443963745}
-  _generatorTypeName: Generate
-  _nameSpace: HS
-  _className: LoginScene
-  _codeSavePath: Assets/Scripts/View/Scene
-  _components:
-  - {fileID: 4848923452971346790}
-  - {fileID: 4848923453894657388}
-  - {fileID: 4848923452690262885}
-  - {fileID: 4848923453443963745}
---- !u!114 &963089857796700844
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4848923452956944727}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c868c90da6704fc44861cca13c697290, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  isModal: 1
-  isClickVoidClose: 1
+  ExitButton: {fileID: 4848923452971346790}
+  StartButton: {fileID: 4848923453894657388}
+  StartTText: {fileID: 4848923453443963745}
+  SettingButton: {fileID: 4848923452690262885}
 --- !u!1 &4848923452971346792
 GameObject:
   m_ObjectHideFlags: 0
@@ -395,7 +360,6 @@ RectTransform:
   m_Children:
   - {fileID: 4848923452645782884}
   m_Father: {fileID: 4848923452956944724}
-  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -496,7 +460,7 @@ GameObject:
   - component: {fileID: 4848923453443963806}
   - component: {fileID: 4848923453443963745}
   m_Layer: 5
-  m_Name: start_TMP
+  m_Name: start_TText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -515,7 +479,6 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4848923453894657391}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -593,15 +556,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -652,7 +617,6 @@ RectTransform:
   m_Children:
   - {fileID: 4848923453443963744}
   m_Father: {fileID: 4848923452956944724}
-  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -772,7 +736,6 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4848923452956944724}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -848,7 +811,6 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4848923452690262884}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -926,15 +888,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0

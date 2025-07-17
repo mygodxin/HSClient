@@ -15,6 +15,6 @@ public class Launch : MonoBehaviour
         ConfigManager.Inst.Init();
 
         //启动开始场景
-        //UIManager.Inst.ShowScene<LoginScene>("打开loginScene");
+        // UIManager.Inst.ShowScene<Login>("打开loginScene");
     }
 }

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,7 +9,7 @@ namespace HS
     /// </summary>
     public class UIView : UIComp
     {
-        protected override UILayer Layer => UILayer.Window;
+        public virtual UILayer Layer => UILayer.Window;
         /// <summary>
         /// 是否模态窗
         /// </summary>
@@ -17,15 +18,32 @@ namespace HS
         /// 是否点击空白处关闭
         /// </summary>
         public bool IsClickVoidClose = true;
+        /// <summary>
+        /// 绑定数据
+        /// </summary>
+        public object Data;
 
-        internal override void OnAddedToStage()
+        /// <summary>
+        /// 是否初始化
+        /// </summary>
+        protected bool _isInit = false;
+
+        internal virtual void OnAddedToStage()
         {
             if (!_isInit)
             {
                 OnInit();
+                InitComp();
                 _isInit = true;
             }
             DoShowAnimation();
+        }
+
+        private void InitComp()
+        {
+            var uiComps = transform.GetComponentsInChildren<UIComp>(true);
+            foreach (var uiComp in uiComps)
+                uiComp.Init();
         }
 
         /// <summary>
@@ -36,16 +54,17 @@ namespace HS
             OnShow();
         }
 
-        internal override void OnRemovedFromStage()
+        internal virtual void OnRemovedFromStage()
         {
             OnHide();
         }
         /// <summary>
         /// 关闭
         /// </summary>
-        public override void Hide()
+        public virtual void Hide()
         {
             DoHideAnimation();
+
         }
         /// <summary>
         /// 关闭动画
@@ -57,9 +76,34 @@ namespace HS
         /// <summary>
         /// 立即关闭，不执行关闭动画
         /// </summary>
-        public override void HideImmediately(bool dispose = false)
+        public virtual void HideImmediately(bool dispose = false)
         {
             UIRoot.Inst.HideWindowImmediately(this, dispose);
+        }
+
+
+        /// <summary>
+        /// 初始化
+        /// </summary>
+        protected virtual void OnInit()
+        {
+
+        }
+
+        /// <summary>
+        /// 打开
+        /// </summary>
+        protected virtual void OnShow()
+        {
+
+        }
+
+        /// <summary>
+        /// 关闭
+        /// </summary>
+        protected virtual void OnHide()
+        {
+
         }
     }
 }

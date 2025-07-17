@@ -15,7 +15,7 @@ namespace GameFramework
 
     public partial class AlertWin : BaseWindow
     {
-        protected override UILayer Layer => UILayer.Top;
+        public override UILayer Layer => UILayer.Top;
         public static string Path = "Assets/GamePackage/UI/Common/AlertWin.prefab";
 
         //由 BindComponent 自动生成，请勿直接修改。
@@ -24,7 +24,7 @@ namespace GameFramework
         public TextMeshProUGUI ContentTText;
         public Button LeftButton;
         public Button RightButton;
-//__FIELD_END__
+        //__FIELD_END__
 
         private AlertParam alertParam;
 

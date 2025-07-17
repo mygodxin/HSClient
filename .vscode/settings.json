@@ -56,5 +56,5 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "UnityFramework.sln"
+    "dotnet.defaultSolution": "HSClient.sln"
 }

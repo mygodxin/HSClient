@@ -5,7 +5,7 @@ namespace GameFramework
     /// </summary>
     public class BaseScene : BaseWindow
     {
-        protected override UILayer Layer => UILayer.Scene;
+        public override UILayer Layer => UILayer.Scene;
         protected override void OnInit()
         {
             base.OnInit();

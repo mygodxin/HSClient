@@ -8,7 +8,18 @@ using UnityEngine;
 
 public class UIBind
 {
-    private CollectSetting settings;
+    private static CollectSetting _setting;
+    public static CollectSetting Setting
+    {
+        get
+        {
+            if (_setting == null)
+            {
+                _setting = new CollectSetting();
+            }
+            return _setting;
+        }
+    }
     private string fieldNamePrefix;
     private bool fieldNameUseType;
     private string excludeName;
@@ -74,7 +85,7 @@ public class UIBind
 
     public async void GenerateComponentCode(GameObject selectedObject)
     {
-        if (settings.ComponentCodeTemp == null)
+        if (Setting.ComponentCodeTemp == null)
         {
             Debug.LogError("ComponentCodeTemplate is null, Please check 'CollectSetting' asset.");
             return;
@@ -86,7 +97,7 @@ public class UIBind
         foreach (var item in components)
         {
             string fieldName = item.Key;
-            if (string.IsNullOrEmpty(fieldName) || !settings.FieldNameRegex.IsMatch(fieldName))
+            if (string.IsNullOrEmpty(fieldName) || !Setting.FieldNameRegex.IsMatch(fieldName))
             {
                 Debug.LogErrorFormat("Field name '{0}' is invalid.", fieldName);
                 continue;
@@ -104,7 +115,7 @@ public class UIBind
         }
 
         //存在同名文件则放弃模版，读取文件内容只替换字段
-        var codeTemplete = settings.ComponentCodeTemp.text;
+        var codeTemplete = Setting.ComponentCodeTemp.text;
         string codeFileName = string.Format("{0}/{1}.cs", codeSavePath, className);
         if (File.Exists(codeFileName))
         {
@@ -131,22 +142,13 @@ public class UIBind
 
     public void SetupDefaultValue()
     {
-        string[] paths = AssetDatabase.FindAssets("t:CollectSetting");
-        if (paths.Length != 1)
-        {
-            return;
-        }
-
-        string path = AssetDatabase.GUIDToAssetPath(paths[0]);
-        settings = AssetDatabase.LoadAssetAtPath<CollectSetting>(path);
-
         components = new Dictionary<string, string>();
 
-        fieldNamePrefix = settings.FieldNamePrefix;
-        fieldNameUseType = settings.FieldNameUseType;
-        nameSpace = settings.Namespace;
-        codeSavePath = settings.CodeSavePath;
-        excludeName = settings.ExcludeName;
+        fieldNamePrefix = Setting.FieldNamePrefix;
+        fieldNameUseType = Setting.FieldNameUseType;
+        nameSpace = Setting.Namespace;
+        codeSavePath = Setting.CodeSavePath;
+        excludeName = Setting.ExcludeName;
     }
 
     #region Collect
@@ -172,7 +174,7 @@ public class UIBind
             }
         }
 
-        Dictionary<string, Component> fieldComponentDict = Collect.CollectComponentFields(transform, settings);
+        Dictionary<string, Component> fieldComponentDict = Collect.CollectComponentFields(transform, Setting);
         foreach (var pair in fieldComponentDict)
         {
             var name = pair.Key;
@@ -206,14 +208,14 @@ public class UIBind
             Directory.CreateDirectory(savePath);
         }
 
-        if (string.IsNullOrEmpty(nameSpace) || !settings.DefaultNameRegex.IsMatch(nameSpace))
+        if (string.IsNullOrEmpty(nameSpace) || !Setting.DefaultNameRegex.IsMatch(nameSpace))
         {
             Debug.LogErrorFormat("NameSpace '{0}' is invalid.", nameSpace);
             return false;
         }
 
         string className = selectedObject.name;
-        if (string.IsNullOrEmpty(className) || !settings.DefaultNameRegex.IsMatch(className))
+        if (string.IsNullOrEmpty(className) || !Setting.DefaultNameRegex.IsMatch(className))
         {
             Debug.LogErrorFormat("Class name '{0}' is invalid.", className);
             return false;
@@ -229,7 +231,7 @@ public class UIBind
             return;
         }
 
-        if (settings.WindowCodeTemp == null)
+        if (Setting.WindowCodeTemp == null)
         {
             Debug.LogError("BehaviourCodeTemplate is null, Please check 'CollectSetting' asset.");
             return;
@@ -242,7 +244,7 @@ public class UIBind
         foreach (var item in components)
         {
             string fieldName = item.Key;
-            if (string.IsNullOrEmpty(fieldName) || !settings.FieldNameRegex.IsMatch(fieldName))
+            if (string.IsNullOrEmpty(fieldName) || !Setting.FieldNameRegex.IsMatch(fieldName))
             {
                 Debug.LogErrorFormat("Field name '{0}' is invalid.", fieldName);
                 continue;
@@ -259,7 +261,7 @@ public class UIBind
         }
 
         //存在同名文件则放弃模版，读取文件内容只替换字段
-        var codeTemplete = settings.WindowCodeTemp.text;
+        var codeTemplete = Setting.WindowCodeTemp.text;
         string codeFileName = string.Format("{0}/{1}.cs", codeSavePath, className);
         if (File.Exists(codeFileName))
         {

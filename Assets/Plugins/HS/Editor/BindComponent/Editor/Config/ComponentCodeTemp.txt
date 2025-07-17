@@ -16,16 +16,14 @@ namespace __NAME_SPACE__
         //__FIELD_BEGIN__
         //__FIELD_END__
 
-        protected override void OnInit()
+        public override void Init()
         {
+
         }
 
-        protected override void OnShow()
+        public override void Refresh()
         {
-        }
 
-        protected override void OnHide()
-        {
         }
     }
 }

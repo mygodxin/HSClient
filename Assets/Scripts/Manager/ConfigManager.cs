@@ -1,5 +1,6 @@
 using HS;
-using SimpleJSON;
+using Luban;
+using System.IO;
 using UnityEngine;
 
 
@@ -29,19 +30,18 @@ public class ConfigManager
 
     public void Init()
     {
-        //JsonConvert.DeserializeObject<>()
-        //var tables = new cfg.Tables(Loader);
-        //Debug.Log(tables.TbItem.DataList);
-        //foreach (var k in tables.TbItem.DataList)
-        //{
-        //    Debug.Log($"ID:{k.Id},名称:{k.Name},描述:{k.Desc}");
-        //}
+        // var tables = new cfg.Tables(Loader);
+        // Debug.Log(tables.Tbitem.DataList);
+        // foreach (var k in tables.Tbitem.DataList)
+        // {
+        //     Debug.Log($"ID:{k.Id},名称:{k.Name},描述:{k.Desc}");
+        // }
     }
 
-    private JSONNode Loader(string path)
-    {
-        var json = ResLoader.LoadAssetAsync<TextAsset>(ResManager.AssetsPath + "Config/" + path + ".json");
-        json.Wait();
-        return JSON.Parse(json.Result.text);
-    }
+    // private ByteBuf Loader(string path)
+    // {
+    //     var json = ResLoader.LoadAssetAsync<TextAsset>("Assets/Config/" + path + ".bytes");
+    //     json.Wait();
+    //     return new ByteBuf(File.ReadAllBytes(json.Result.text));
+    // }
 }

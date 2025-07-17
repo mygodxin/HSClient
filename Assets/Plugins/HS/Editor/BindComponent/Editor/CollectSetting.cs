@@ -1,11 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using UnityEditor;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "CollectSetting", menuName = "BindComponent/Collect Setting", order = 1)]
-public class CollectSetting : ScriptableObject
+public class CollectSetting
 {
+    public CollectSetting()
+    {
+        WindowCodeTemp = AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Plugins/HS/Editor/BindComponent/Editor/Config/WindowCodeTemp.txt");
+        ComponentCodeTemp = AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Plugins/HS/Editor/BindComponent/Editor/Config/ComponentCodeTemp.txt");
+    }
     [Serializable]
     public class ComponentType
     {
@@ -63,7 +68,11 @@ public class CollectSetting : ScriptableObject
 
             new ComponentType("Scroller","EnhancedScroller"),
             new ComponentType("CImage","CircleImage"),
-            new ComponentType("MC","MovieClip")
+            new ComponentType("MC","MovieClip"),
+            new ComponentType("HSList","HSList"),
+            new ComponentType("HSBar","HSProgressBar"),
+            new ComponentType("HSTabView","HSTabView"),
+            new ComponentType("HSButton","HSButton")
         };
     [Tooltip("默认字段前缀")]
     public string FieldNamePrefix = "";

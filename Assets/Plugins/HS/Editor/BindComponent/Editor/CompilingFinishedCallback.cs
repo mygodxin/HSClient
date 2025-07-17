@@ -6,20 +6,7 @@ using UnityEngine;
 public static class CompilingFinishedCallback
 {
     private static readonly string TmpMethodNamesKey = "CompilingFinishedCallback_TmpMethodName";
-    private static CollectSetting settings;
-    private static CollectSetting Settings
-    {
-        get
-        {
-            if (settings == null)
-            {
-                string[] collectSetting = AssetDatabase.FindAssets("t:CollectSetting");
-                string p = AssetDatabase.GUIDToAssetPath(collectSetting[0]);
-                settings = AssetDatabase.LoadAssetAtPath<CollectSetting>(p);
-            }
-            return settings;
-        }
-    }
+    private static CollectSetting Setting => UIBind.Setting;
     public static void Set(string path)
     {
         var pathStr = EditorPrefs.GetString(TmpMethodNamesKey);
@@ -57,10 +44,10 @@ public static class CompilingFinishedCallback
 
     private static void BindProperty(GameObject selectedObject)
     {
-        var collectCodeName = Settings.CollectorCodeName;
-        var fieldNamePrefix = Settings.FieldNamePrefix;
-        var fieldNameUseType = Settings.FieldNameUseType;
-        var nameSpace = Settings.Namespace;
+        var collectCodeName = Setting.CollectorCodeName;
+        var fieldNamePrefix = Setting.FieldNamePrefix;
+        var fieldNameUseType = Setting.FieldNameUseType;
+        var nameSpace = Setting.Namespace;
 
         string typeName = string.Format("{0}.{1}", nameSpace, selectedObject.name);
 
@@ -89,7 +76,7 @@ public static class CompilingFinishedCallback
         var children = selectedObject.GetComponentsInChildren<Transform>(true);
         foreach (var child in children)
         {
-            if (selectedObject.name != child.name && child.name.IndexOf(settings.ExcludeName) >= 0)
+            if (selectedObject.name != child.name && child.name.IndexOf(Setting.ExcludeName) >= 0)
             {
                 BindProperty(child.gameObject);
                 string childTypeName = string.Format("{0}.{1}", nameSpace, child.name);
@@ -101,7 +88,7 @@ public static class CompilingFinishedCallback
             }
         }
 
-        Dictionary<string, Component> fieldComponentDict = collector.CollectComponentFields(target.transform, settings);
+        Dictionary<string, Component> fieldComponentDict = collector.CollectComponentFields(target.transform, Setting);
         foreach (var pair in fieldComponentDict)
         {
             components.Add(pair.Key, pair.Value);

@@ -39,14 +39,6 @@ namespace GameFramework
                 AudioManager.Inst.PlayEffect("Assets/GamePackage/Audios/通用/通用_一级弹窗.mp3");
         }
 
-        private void OnEnable()
-        {
-        }
-
-        private void OnDisable()
-        {
-        }
-
         protected override void DoHideAnimation()
         {
             //var tween = this.transform.DOScale(new Vector3(.1f, .1f, .1f), 0.25f);

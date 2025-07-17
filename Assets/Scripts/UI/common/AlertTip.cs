@@ -8,9 +8,9 @@ namespace GameFramework
 {
     public partial class AlertTip : BaseWindow
     {
-        public static string Path = "Assets/GamePackage/UI/Common/AlertTip.prefab";
+        public static string Path = "Assets/GamePackage/UI/Common/AlertTip/AlertTip.prefab";
 
-        protected override UILayer Layer => UILayer.Top;
+        public override UILayer Layer => UILayer.Top;
 
         //由 BindComponent 自动生成，请勿直接修改。
         //__FIELD_BEGIN__

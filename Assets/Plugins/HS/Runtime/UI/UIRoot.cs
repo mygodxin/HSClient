@@ -23,7 +23,7 @@ namespace HS
         /// <summary>
         /// UI缓存
         /// </summary>
-        public Dictionary<string, UIComp> UICache;
+        public Dictionary<string, UIView> UICache;
         /// <summary>
         /// 界面半透明背景层
         /// </summary>
@@ -45,7 +45,7 @@ namespace HS
 
         public UIRoot()
         {
-            UICache = new Dictionary<string, UIComp>();
+            UICache = new Dictionary<string, UIView>();
             UILayers = new Dictionary<UILayer, RectTransform>();
         }
 
@@ -100,6 +100,8 @@ namespace HS
                 return _canvas;
             }
         }
+
+        private Camera _camera;
         /// <summary>
         /// 摄像机
         /// </summary>
@@ -107,10 +109,12 @@ namespace HS
         {
             get
             {
-                return GameObject.FindObjectOfType<Camera>();
+                if (_camera == null)
+                    _camera = UnityEngine.Object.FindFirstObjectByType<Camera>();
+                return _camera;
             }
         }
-        private async Task<UIComp> GetComponent(Type type)
+        private async Task<UIView> GetComponent(Type type)
         {
             if (!UICache.TryGetValue(type.Name, out var comp))
             {
@@ -134,18 +138,18 @@ namespace HS
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        private async Task<UIComp> LoadComp(Type type)
+        private async Task<UIView> LoadComp(Type type)
         {
             //根据组件的Path去加载
             var property = type.GetField("Path", BindingFlags.Public | BindingFlags.Static);
             var path = property.GetValue(null);
             var go = await ResLoader.LoadAssetAsync<GameObject>((string)path);
 
-            var comp = (UIComp)UnityEngine.Object.Instantiate(go).GetComponent(type);
+            var comp = (UIView)UnityEngine.Object.Instantiate(go).GetComponent(type);
             return comp;
         }
 
-        public async Task<T> RenderComp<T>(object data = null, Transform parent = null) where T : UIComp
+        public async Task<T> RenderComp<T>(object data = null, Transform parent = null) where T : UIView
         {
             var comp = await this.GetComponent(typeof(T));
             var render = UnityEngine.Object.Instantiate(comp);
@@ -189,8 +193,7 @@ namespace HS
         public async Task<UIView> ShowWindow(Type type, object data = null, Transform trans = null)
         {
             var view = (UIView)await this.GetComponent(type);
-            var method = type.GetProperty("Layer", BindingFlags.NonPublic | BindingFlags.Instance);
-            var layer = (UILayer)method.GetValue(view);
+            var layer = view.Layer;
             view.transform.SetParent(UILayers[layer].transform, false);
             view.Data = data;
             view.gameObject.SetActive(true);
