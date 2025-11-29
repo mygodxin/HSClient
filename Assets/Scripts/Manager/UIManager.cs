@@ -1,4 +1,3 @@
-using DuiChongServerCommon.ClientProtocol;
 using HS;
 using System;
 using System.Collections.Generic;
@@ -20,15 +19,15 @@ namespace GameFramework
         private ObjectPool<AlertTip> tipPool;
         private WaitModelWin _waitModelWin;
 
-        public static UIManager Inst = new UIManager();//
+        public static UIManager Inst = new UIManager();
 
-        public async Task Init()
+        public void Init()
         {
             UIRoot.Inst.Init();
             InitAlertTip();
-            await LoadWaitModel();
+            LoadWaitModel();
         }
-        private async Task LoadWaitModel()
+        private async void LoadWaitModel()
         {
             var path = typeof(WaitModelWin).GetField("Path", BindingFlags.Public | BindingFlags.Static).GetValue(null).ToString();
             var obj = await ResLoader.LoadAssetAsync<GameObject>(path);
@@ -40,7 +39,7 @@ namespace GameFramework
         {
             ShowScene(typeof(T), data);
         }
-        // SingleAwaiter SingleAwaiter = new SingleAwaiter();
+
         public async void ShowScene(Type type, object data = null)
         {
             if (this.curScene != null)
@@ -117,7 +116,6 @@ namespace GameFramework
 
         public void ShowTip(string content)
         {
-            //AddComponent<AlertTip>(content);
             var tip = tipPool.Get();
             var parent = UIRoot.Inst.UILayers[UILayer.Popup];
             tip.transform.SetParent(parent, false);

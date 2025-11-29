@@ -1,13 +1,11 @@
 #pragma warning disable CS8500
 
-using Core;
 using KcpTransport.LowLevel;
 using System;
 using System.Buffers;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -296,7 +294,7 @@ namespace KcpTransport
                     }
                     catch (Exception e)
                     {
-#if !UNITY_64
+#if !UNITY_5_6_OR_NEWER
                         Logger.Error(e.ToString());
 #else
 #endif

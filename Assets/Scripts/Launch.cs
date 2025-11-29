@@ -1,6 +1,4 @@
-using DG.Tweening;
 using GameFramework;
-using HS;
 using UnityEngine;
 
 /// <summary>
@@ -11,10 +9,13 @@ public class Launch : MonoBehaviour
     void Start()
     {
         Debug.Log("Launch Start");
-        //初始化配置
+        // 初始化配置
         ConfigManager.Inst.Init();
 
-        //启动开始场景
-        // UIManager.Inst.ShowScene<Login>("打开loginScene");
+        // 初始化UI
+        UIManager.Inst.Init();
+
+        // 启动开始场景
+        UIManager.Inst.ShowScene<LoginScene>("打开loginScene");
     }
 }

@@ -8,7 +8,7 @@
     "BuildPipeline": "EditorSimulateBuildPipeline",
     "PackageName": "DefaultPackage",
     "PackageVersion": "Simulate",
-    "PackageNote": "2025/9/12 20:14:43",
+    "PackageNote": "2025/11/29 17:11:21",
     "AssetList": [
         {
             "Address": "",
@@ -239,7 +239,7 @@
         {
             "BundleName": "assets_config.bundle",
             "UnityCRC": 0,
-            "FileHash": "f3be61be81144f573d1e2a140689513e",
+            "FileHash": "3e2117e7a9e90b67abb08a79f2c1a576",
             "FileCRC": "00000000",
             "FileSize": 39,
             "Encrypted": false,
@@ -249,7 +249,7 @@
         {
             "BundleName": "assets_hotfixpackage_audios.bundle",
             "UnityCRC": 0,
-            "FileHash": "d69df871835b7ee9c810f306052e7b5e",
+            "FileHash": "484583b0203fb20a808836f6c1522c68",
             "FileCRC": "00000000",
             "FileSize": 2004994,
             "Encrypted": false,
@@ -259,7 +259,7 @@
         {
             "BundleName": "assets_hotfixpackage_audios_sound.bundle",
             "UnityCRC": 0,
-            "FileHash": "b79d1538bc4ec5f68a29f8b636d9dbd2",
+            "FileHash": "1b467a75415bc52956feb81b8fab0df3",
             "FileCRC": "00000000",
             "FileSize": 144756,
             "Encrypted": false,
@@ -269,7 +269,7 @@
         {
             "BundleName": "assets_hotfixpackage_hotfixdll.bundle",
             "UnityCRC": 0,
-            "FileHash": "e17436ff958d5b854f24f3303b4492ad",
+            "FileHash": "91ffdc30af482b82de2694816d7cac35",
             "FileCRC": "00000000",
             "FileSize": 6210048,
             "Encrypted": false,
@@ -279,7 +279,7 @@
         {
             "BundleName": "assets_hotfixpackage_materials_reversemask.bundle",
             "UnityCRC": 0,
-            "FileHash": "08cc5fe04dd95faa648f248d35fe5e40",
+            "FileHash": "ac97327e17e17517aa887a90035e3148",
             "FileCRC": "00000000",
             "FileSize": 4714,
             "Encrypted": false,
@@ -289,7 +289,7 @@
         {
             "BundleName": "assets_hotfixpackage_prefabs_ui.bundle",
             "UnityCRC": 0,
-            "FileHash": "1374f77d63f72c4a6dbc75f795a2bb2c",
+            "FileHash": "cad8cecd76f2c581befd842cd7355fb3",
             "FileCRC": "00000000",
             "FileSize": 119995,
             "Encrypted": false,
@@ -299,7 +299,7 @@
         {
             "BundleName": "assets_hotfixpackage_scenes.bundle",
             "UnityCRC": 0,
-            "FileHash": "f921d87a2e3caaea2d63449a94cdb075",
+            "FileHash": "7a8da8d293f205c341512296756074a4",
             "FileCRC": "00000000",
             "FileSize": 67111,
             "Encrypted": false,
