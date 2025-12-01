@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System;
 
 namespace YooAsset
@@ -10,7 +11,8 @@ namespace YooAsset
         protected enum ESteps
         {
             None = 0,
-            LoadBundleFile,
+            StartBundleLoader,
+            WaitBundleLoader,
             ProcessBundleResult,
             Done,
         }
@@ -65,15 +67,27 @@ namespace YooAsset
         /// </summary>
         public bool IsDestroyed { private set; get; } = false;
 
+        /// <summary>
+        /// 加载任务是否进行中
+        /// </summary>
+        private bool IsLoading
+        {
+            get
+            {
+                return _steps == ESteps.WaitBundleLoader || _steps == ESteps.ProcessBundleResult;
+            }
+        }
 
         private ESteps _steps = ESteps.None;
+        protected readonly ResourceManager _resManager;
         private readonly LoadBundleFileOperation _mainBundleLoader;
-        private readonly List<LoadBundleFileOperation> _bundleLoaders = new List<LoadBundleFileOperation>();
-        private readonly List<HandleBase> _handles = new List<HandleBase>();
-
+        private readonly List<LoadBundleFileOperation> _bundleLoaders = new List<LoadBundleFileOperation>(10);
+        private readonly HashSet<HandleBase> _handles = new HashSet<HandleBase>();
+        private readonly LinkedList<WeakReference<HandleBase>> _weakReferences = new LinkedList<WeakReference<HandleBase>>();
 
         public ProviderOperation(ResourceManager manager, string providerGUID, AssetInfo assetInfo)
         {
+            _resManager = manager;
             ProviderGUID = providerGUID;
             MainAssetInfo = assetInfo;
 
@@ -96,17 +110,33 @@ namespace YooAsset
                 }
             }
         }
-        internal override void InternalOnStart()
+        internal override void InternalStart()
         {
-            DebugBeginRecording();
-            _steps = ESteps.LoadBundleFile;
+            _steps = ESteps.StartBundleLoader;
         }
-        internal override void InternalOnUpdate()
+        internal override void InternalUpdate()
         {
             if (_steps == ESteps.None || _steps == ESteps.Done)
                 return;
 
-            if (_steps == ESteps.LoadBundleFile)
+            // 注意：未在加载中的任务可以挂起！
+            if (IsLoading == false)
+            {
+                if (RefCount <= 0)
+                    return;
+            }
+
+            if (_steps == ESteps.StartBundleLoader)
+            {
+                foreach (var bundleLoader in _bundleLoaders)
+                {
+                    bundleLoader.StartOperation();
+                    AddChildOperation(bundleLoader);
+                }
+                _steps = ESteps.WaitBundleLoader;
+            }
+
+            if (_steps == ESteps.WaitBundleLoader)
             {
                 if (IsWaitForAsyncComplete)
                 {
@@ -116,6 +146,13 @@ namespace YooAsset
                     }
                 }
 
+                // 更新资源包加载器
+                foreach (var bundleLoader in _bundleLoaders)
+                {
+                    bundleLoader.UpdateOperation();
+                }
+
+                // 检测加载是否完成
                 foreach (var bundleLoader in _bundleLoaders)
                 {
                     if (bundleLoader.IsDone == false)
@@ -128,6 +165,7 @@ namespace YooAsset
                     }
                 }
 
+                // 检测加载结果
                 BundleResultObject = _mainBundleLoader.Result;
                 if (BundleResultObject == null)
                 {
@@ -155,6 +193,10 @@ namespace YooAsset
                 }
             }
         }
+        internal override string InternalGetDesc()
+        {
+            return $"AssetPath : {MainAssetInfo.AssetPath}";
+        }
         protected abstract void ProcessBundleResult();
 
         /// <summary>
@@ -167,8 +209,9 @@ namespace YooAsset
             // 检测是否为正常销毁
             if (IsDone == false)
             {
-                Error = "User abort !";
+                _steps = ESteps.Done;
                 Status = EOperationStatus.Failed;
+                Error = "User abort !";
             }
 
             // 减少引用计数
@@ -183,9 +226,14 @@ namespace YooAsset
         /// </summary>
         public bool CanDestroyProvider()
         {
-            // 注意：在进行资源加载过程时不可以销毁
-            if (_steps == ESteps.ProcessBundleResult)
+            // 注意：正在加载中的任务不可以销毁
+            if (IsLoading)
                 return false;
+
+            if (_resManager.UseWeakReferenceHandle)
+            {
+                TryCleanupWeakReference();
+            }
 
             return RefCount <= 0;
         }
@@ -198,21 +246,16 @@ namespace YooAsset
             // 引用计数增加
             RefCount++;
 
-            HandleBase handle;
-            if (typeof(T) == typeof(AssetHandle))
-                handle = new AssetHandle(this);
-            else if (typeof(T) == typeof(SceneHandle))
-                handle = new SceneHandle(this);
-            else if (typeof(T) == typeof(SubAssetsHandle))
-                handle = new SubAssetsHandle(this);
-            else if (typeof(T) == typeof(AllAssetsHandle))
-                handle = new AllAssetsHandle(this);
-            else if (typeof(T) == typeof(RawFileHandle))
-                handle = new RawFileHandle(this);
+            HandleBase handle = HandleFactory.CreateHandle(this, typeof(T));
+            if (_resManager.UseWeakReferenceHandle)
+            {
+                var weakRef = new WeakReference<HandleBase>(handle);
+                _weakReferences.AddLast(weakRef);
+            }
             else
-                throw new System.NotImplementedException();
-
-            _handles.Add(handle);
+            {
+                _handles.Add(handle);
+            }
             return handle as T;
         }
 
@@ -224,8 +267,16 @@ namespace YooAsset
             if (RefCount <= 0)
                 throw new System.Exception("Should never get here !");
 
-            if (_handles.Remove(handle) == false)
-                throw new System.Exception("Should never get here !");
+            if (_resManager.UseWeakReferenceHandle)
+            {
+                if (RemoveWeakReference(handle) == false)
+                    throw new System.Exception("Should never get here !");
+            }
+            else
+            {
+                if (_handles.Remove(handle) == false)
+                    throw new System.Exception("Should never get here !");
+            }
 
             // 引用计数减少
             RefCount--;
@@ -236,10 +287,35 @@ namespace YooAsset
         /// </summary>
         public void ReleaseAllHandles()
         {
-            for (int i = _handles.Count - 1; i >= 0; i--)
+            if (_resManager.UseWeakReferenceHandle)
             {
-                var handle = _handles[i];
-                handle.Release();
+                List<WeakReference<HandleBase>> tempers = _weakReferences.ToList();
+                foreach (var weakRef in tempers)
+                {
+                    if (weakRef.TryGetTarget(out HandleBase target))
+                    {
+                        target.Release();
+                    }
+                }
+            }
+            else
+            {
+                List<HandleBase> tempers = _handles.ToList();
+                foreach (var handle in tempers)
+                {
+                    handle.Release();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 尝试卸载资源包
+        /// </summary>
+        public void TryUnloadBundle()
+        {
+            if (_resManager.AutoUnloadBundleWhenUnused)
+            {
+                _resManager.TryUnloadUnusedAsset(MainAssetInfo, 10);
             }
         }
 
@@ -248,20 +324,35 @@ namespace YooAsset
         /// </summary>
         protected void InvokeCompletion(string error, EOperationStatus status)
         {
-            DebugEndRecording();
-
             _steps = ESteps.Done;
             Error = error;
             Status = status;
 
             // 注意：创建临时列表是为了防止外部逻辑在回调函数内创建或者释放资源句柄。
             // 注意：回调方法如果发生异常，会阻断列表里的后续回调方法！
-            List<HandleBase> tempers = new List<HandleBase>(_handles);
-            foreach (var hande in tempers)
+            if (_resManager.UseWeakReferenceHandle)
             {
-                if (hande.IsValid)
+                List<WeakReference<HandleBase>> tempers = _weakReferences.ToList();
+                foreach (var weakRef in tempers)
                 {
-                    hande.InvokeCallback();
+                    if (weakRef.TryGetTarget(out HandleBase target))
+                    {
+                        if (target.IsValid)
+                        {
+                            target.InvokeCallback();
+                        }
+                    }
+                }
+            }
+            else
+            {
+                List<HandleBase> tempers = _handles.ToList();
+                foreach (var handle in tempers)
+                {
+                    if (handle.IsValid)
+                    {
+                        handle.InvokeCallback();
+                    }
                 }
             }
         }
@@ -286,71 +377,74 @@ namespace YooAsset
             return status;
         }
 
-        #region 调试信息相关
+        /// <summary>
+        /// 移除指定句柄的弱引用对象
+        /// </summary>
+        private bool RemoveWeakReference(HandleBase handle)
+        {
+            bool removed = false;
+            var currentNode = _weakReferences.First;
+            while (currentNode != null)
+            {
+                var nextNode = currentNode.Next;
+                if (currentNode.Value.TryGetTarget(out HandleBase target))
+                {
+                    if (ReferenceEquals(target, handle))
+                    {
+                        _weakReferences.Remove(currentNode);
+                        removed = true;
+                        break;
+                    }
+                }
+                currentNode = nextNode;
+            }
+            return removed;
+        }
+
+        /// <summary>
+        /// 清理所有失效的弱引用
+        /// </summary>
+        private void TryCleanupWeakReference()
+        {
+            var currentNode = _weakReferences.First;
+            while (currentNode != null)
+            {
+                var nextNode = currentNode.Next;
+                if (currentNode.Value.TryGetTarget(out HandleBase target) == false)
+                {
+                    _weakReferences.Remove(currentNode);
+
+                    // 引用计数减少
+                    RefCount--;
+                }
+                currentNode = nextNode;
+            }
+        }
+
+        #region 调试信息
         /// <summary>
         /// 出生的场景
         /// </summary>
         public string SpawnScene = string.Empty;
 
-        /// <summary>
-        /// 出生的时间
-        /// </summary>
-        public string SpawnTime = string.Empty;
-
-        /// <summary>
-        /// 加载耗时（单位：毫秒）
-        /// </summary>
-        public long LoadingTime { protected set; get; }
-
-        // 加载耗时统计
-        private Stopwatch _watch = null;
-
         [Conditional("DEBUG")]
-        public void InitSpawnDebugInfo()
+        public void InitProviderDebugInfo()
         {
-            SpawnScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name; ;
-            SpawnTime = SpawnTimeToString(UnityEngine.Time.realtimeSinceStartup);
-        }
-        private string SpawnTimeToString(float spawnTime)
-        {
-            float h = UnityEngine.Mathf.FloorToInt(spawnTime / 3600f);
-            float m = UnityEngine.Mathf.FloorToInt(spawnTime / 60f - h * 60f);
-            float s = UnityEngine.Mathf.FloorToInt(spawnTime - m * 60f - h * 3600f);
-            return h.ToString("00") + ":" + m.ToString("00") + ":" + s.ToString("00");
-        }
-
-        [Conditional("DEBUG")]
-        protected void DebugBeginRecording()
-        {
-            if (_watch == null)
-            {
-                _watch = Stopwatch.StartNew();
-            }
-        }
-
-        [Conditional("DEBUG")]
-        private void DebugEndRecording()
-        {
-            if (_watch != null)
-            {
-                LoadingTime = _watch.ElapsedMilliseconds;
-                _watch = null;
-            }
+            SpawnScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
         }
 
         /// <summary>
         /// 获取资源包的调试信息列表
         /// </summary>
-        internal void GetBundleDebugInfos(List<DebugBundleInfo> output)
+        internal List<string> GetDebugDependBundles()
         {
+            List<string> result = new List<string>(_bundleLoaders.Count);
             foreach (var bundleLoader in _bundleLoaders)
             {
-                var bundleInfo = new DebugBundleInfo();
-                bundleInfo.BundleName = bundleLoader.LoadBundleInfo.Bundle.BundleName;
-                bundleInfo.RefCount = bundleLoader.RefCount;
-                bundleInfo.Status = bundleLoader.Status;
-                output.Add(bundleInfo);
+                var packageBundle = bundleLoader.LoadBundleInfo.Bundle;
+                result.Add(packageBundle.BundleName);
             }
+            return result;
         }
         #endregion
     }

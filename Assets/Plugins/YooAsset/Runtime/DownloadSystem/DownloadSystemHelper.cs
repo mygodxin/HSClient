@@ -1,4 +1,5 @@
 ﻿using UnityEngine.Networking;
+using UnityEngine;
 
 namespace YooAsset
 {
@@ -9,6 +10,14 @@ namespace YooAsset
 
     internal class DownloadSystemHelper
     {
+#if UNITY_EDITOR
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void OnRuntimeInitialize()
+        {
+            UnityWebRequestCreater = null;
+        }
+#endif
+
         public static UnityWebRequestDelegate UnityWebRequestCreater = null;
         public static UnityWebRequest NewUnityWebRequestGet(string requestURL)
         {
@@ -28,11 +37,17 @@ namespace YooAsset
             string url;
 
             // 获取对应平台的URL地址
-#if UNITY_EDITOR
+            // 说明：苹果不同设备上操作系统不同。
+            // 说明：iPhone和iPod对应的是iOS系统。
+            // 说明：iPad对应的是iPadOS系统。
+            // 说明：AppleTV对应的是tvOS系统。
+#if UNITY_EDITOR_OSX
+            url = StringUtility.Format("file://{0}", path);
+#elif UNITY_EDITOR_WIN
             url = StringUtility.Format("file:///{0}", path);
 #elif UNITY_WEBGL
             url = path;
-#elif UNITY_IPHONE
+#elif UNITY_IOS || UNITY_IPHONE
             url = StringUtility.Format("file://{0}", path);
 #elif UNITY_ANDROID
             if (path.StartsWith("jar:file://"))
@@ -54,10 +69,17 @@ namespace YooAsset
                 else
                     url = StringUtility.Format("file://{0}", path);
             }
+
+#elif UNITY_WSA
+            url = StringUtility.Format("file:///{0}", path);
+#elif UNITY_TVOS
+            url = StringUtility.Format("file:///{0}", path);
 #elif UNITY_STANDALONE_OSX
             url = new System.Uri(path).ToString();
-#elif UNITY_STANDALONE
+#elif UNITY_STANDALONE_WIN
             url = StringUtility.Format("file:///{0}", path);
+#elif UNITY_STANDALONE_LINUX
+            url = StringUtility.Format("file:///root/{0}", path);
 #else
             throw new System.NotImplementedException();
 #endif

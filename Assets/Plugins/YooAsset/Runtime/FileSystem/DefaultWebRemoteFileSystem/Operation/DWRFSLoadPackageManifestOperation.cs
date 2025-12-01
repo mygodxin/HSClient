@@ -14,8 +14,8 @@ namespace YooAsset
         private readonly DefaultWebRemoteFileSystem _fileSystem;
         private readonly string _packageVersion;
         private readonly int _timeout;
-        private RequestWebRemotePackageHashOperation _requestWebPackageHashOp;
-        private LoadWebRemotePackageManifestOperation _loadWebPackageManifestOp;
+        private RequestWebPackageHashOperation _requestWebPackageHashOp;
+        private LoadWebPackageManifestOperation _loadWebPackageManifestOp;
         private ESteps _steps = ESteps.None;
 
 
@@ -25,11 +25,11 @@ namespace YooAsset
             _packageVersion = packageVersion;
             _timeout = timeout;
         }
-        internal override void InternalOnStart()
+        internal override void InternalStart()
         {
             _steps = ESteps.RequestWebPackageHash;
         }
-        internal override void InternalOnUpdate()
+        internal override void InternalUpdate()
         {
             if (_steps == ESteps.None || _steps == ESteps.Done)
                 return;
@@ -38,10 +38,12 @@ namespace YooAsset
             {
                 if (_requestWebPackageHashOp == null)
                 {
-                    _requestWebPackageHashOp = new RequestWebRemotePackageHashOperation(_fileSystem, _packageVersion, _timeout);
-                    OperationSystem.StartOperation(_fileSystem.PackageName, _requestWebPackageHashOp);
+                    _requestWebPackageHashOp = new RequestWebPackageHashOperation(_fileSystem.RemoteServices, _fileSystem.PackageName, _packageVersion, _timeout);
+                    _requestWebPackageHashOp.StartOperation();
+                    AddChildOperation(_requestWebPackageHashOp);
                 }
 
+                _requestWebPackageHashOp.UpdateOperation();
                 if (_requestWebPackageHashOp.IsDone == false)
                     return;
 
@@ -62,10 +64,15 @@ namespace YooAsset
                 if (_loadWebPackageManifestOp == null)
                 {
                     string packageHash = _requestWebPackageHashOp.PackageHash;
-                    _loadWebPackageManifestOp = new LoadWebRemotePackageManifestOperation(_fileSystem, _packageVersion, packageHash);
-                    OperationSystem.StartOperation(_fileSystem.PackageName, _loadWebPackageManifestOp);
+                    string packageName = _fileSystem.PackageName;
+                    var manifestServices = _fileSystem.ManifestServices;
+                    var remoteServices = _fileSystem.RemoteServices;
+                    _loadWebPackageManifestOp = new LoadWebPackageManifestOperation(manifestServices, remoteServices, packageName, _packageVersion, packageHash, _timeout);
+                    _loadWebPackageManifestOp.StartOperation();
+                    AddChildOperation(_loadWebPackageManifestOp);
                 }
 
+                _loadWebPackageManifestOp.UpdateOperation();
                 Progress = _loadWebPackageManifestOp.Progress;
                 if (_loadWebPackageManifestOp.IsDone == false)
                     return;

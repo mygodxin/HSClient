@@ -11,5 +11,4 @@
   <Project Path="HSEditor.csproj" />
   <Project Path="Main.csproj" />
   <Project Path="UnityWebSocket.Editor.csproj" />
-  <Project Path="Assembly-CSharp-Editor.csproj" />
 </Solution>

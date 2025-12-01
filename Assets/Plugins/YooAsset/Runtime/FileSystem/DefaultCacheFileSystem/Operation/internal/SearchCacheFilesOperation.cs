@@ -16,7 +16,7 @@ namespace YooAsset
         }
 
         private readonly DefaultCacheFileSystem _fileSystem;
-        private IEnumerator<DirectoryInfo> _filesEnumerator = null;
+        private IEnumerator<string> _filesEnumerator = null;
         private float _verifyStartTime;
         private ESteps _steps = ESteps.None;
 
@@ -30,23 +30,23 @@ namespace YooAsset
         {
             _fileSystem = fileSystem;
         }
-        internal override void InternalOnStart()
+        internal override void InternalStart()
         {
             _steps = ESteps.Prepare;
             _verifyStartTime = UnityEngine.Time.realtimeSinceStartup;
         }
-        internal override void InternalOnUpdate()
+        internal override void InternalUpdate()
         {
             if (_steps == ESteps.None || _steps == ESteps.Done)
                 return;
 
             if (_steps == ESteps.Prepare)
             {
-                DirectoryInfo rootDirectory = new DirectoryInfo(_fileSystem.GetCacheBundleFilesRoot());
-                if (rootDirectory.Exists)
+                string rootDirectory = _fileSystem.GetCacheBundleFilesRoot();
+                if (Directory.Exists(rootDirectory))
                 {
-                    var directorieInfos = rootDirectory.EnumerateDirectories();
-                    _filesEnumerator = directorieInfos.GetEnumerator();
+                    var directories = Directory.EnumerateDirectories(rootDirectory);
+                    _filesEnumerator = directories.GetEnumerator();
                 }
                 _steps = ESteps.SearchFiles;
             }
@@ -76,24 +76,26 @@ namespace YooAsset
                     break;
 
                 var rootFoder = _filesEnumerator.Current;
-                var childDirectories = rootFoder.GetDirectories();
+                var childDirectories = Directory.EnumerateDirectories(rootFoder);
                 foreach (var chidDirectory in childDirectories)
                 {
-                    string bundleGUID = chidDirectory.Name;
+                    string bundleGUID = Path.GetFileName(chidDirectory);
                     if (_fileSystem.IsRecordBundleFile(bundleGUID))
                         continue;
 
                     // 创建验证元素类
-                    string fileRootPath = chidDirectory.FullName;
-                    string dataFilePath = $"{fileRootPath}/{ DefaultCacheFileSystemDefine.BundleDataFileName}";
-                    string infoFilePath = $"{fileRootPath}/{ DefaultCacheFileSystemDefine.BundleInfoFileName}";
+                    string fileRootPath = chidDirectory;
+                    string dataFilePath = $"{fileRootPath}/{DefaultCacheFileSystemDefine.BundleDataFileName}";
+                    string infoFilePath = $"{fileRootPath}/{DefaultCacheFileSystemDefine.BundleInfoFileName}";
 
                     // 存储的数据文件追加文件格式
                     if (_fileSystem.AppendFileExtension)
                     {
                         string dataFileExtension = FindDataFileExtension(chidDirectory);
                         if (string.IsNullOrEmpty(dataFileExtension) == false)
+                        {
                             dataFilePath += dataFileExtension;
+                        }
                     }
 
                     var element = new VerifyFileElement(_fileSystem.PackageName, bundleGUID, fileRootPath, dataFilePath, infoFilePath);
@@ -106,17 +108,15 @@ namespace YooAsset
 
             return isFindItem;
         }
-        private string FindDataFileExtension(DirectoryInfo directoryInfo)
+        private string FindDataFileExtension(string directory)
         {
             string dataFileExtension = string.Empty;
-            var fileInfos = directoryInfo.GetFiles();
-            foreach (var fileInfo in fileInfos)
+            string searchPattern = DefaultCacheFileSystemDefine.BundleDataFileName + "*";
+            var dataFiles = Directory.EnumerateFiles(directory, searchPattern);
+            foreach (var filePath in dataFiles)
             {
-                if (fileInfo.Name.StartsWith(DefaultCacheFileSystemDefine.BundleDataFileName))
-                {
-                    dataFileExtension = fileInfo.Extension;
-                    break;
-                }
+                dataFileExtension = Path.GetExtension(filePath);
+                break;
             }
             return dataFileExtension;
         }

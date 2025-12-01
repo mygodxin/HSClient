@@ -13,11 +13,19 @@ namespace YooAsset
             if (_loadSubAssetsOp == null)
             {
                 _loadSubAssetsOp = BundleResultObject.LoadSubAssetsAsync(MainAssetInfo);
+                _loadSubAssetsOp.StartOperation();
+                AddChildOperation(_loadSubAssetsOp);
+
+#if UNITY_WEBGL
+                if (_resManager.WebGLForceSyncLoadAsset)
+                    _loadSubAssetsOp.WaitForAsyncComplete();
+#endif
             }
 
             if (IsWaitForAsyncComplete)
                 _loadSubAssetsOp.WaitForAsyncComplete();
 
+            _loadSubAssetsOp.UpdateOperation();
             Progress = _loadSubAssetsOp.Progress;
             if (_loadSubAssetsOp.IsDone == false)
                 return;

@@ -2,6 +2,660 @@
 
 All notable changes to this package will be documented in this file.
 
+## [2.3.17] - 2025-10-30
+
+**非常重要**：修复了#627优化导致的资源清单CRC值为空的问题。
+
+该问题会导致下载的损坏文件验证通过。
+
+影响范围：v2.3.15版本，v2.3.16版本。
+
+**非常重要**：(#661) 修复了Package销毁过程中，遇到正在加载的AssetBundle会导致无法卸载的问题。
+
+该问题是偶现，引擎会提示AssetBundle已经加载，无法加载新的文件，导致资源对象加载失败！
+
+影响范围：所有版本！
+
+### Improvements
+
+- 重构并统一了资源清单的反序列化逻辑。
+
+### Fixed
+
+- (#645) 修复了着色器变种收集工具，在极端情况下变种收集不完整的问题。
+- (#646) 修复了EditorSimulateMode模式下开启模拟下载tag不生效的问题。
+- (#667) 修复了所有编辑器窗口针对中文IME的输入问题。
+- (#670) 修复了Catalog文件生成过程中白名单未考虑自定义清单前缀名。
+
+### Improvements
+
+- (#650) 解决互相依赖的资源包无法卸载的问题。需要开启宏定义：YOOASSET_EXPERIMENTAL
+- (#655) 优化了初始化的时候，缓存文件搜索效率。安卓平台性能提升1倍，IOS平台性能提升3倍。
+
+### Added
+
+- (#643) 新增构建参数，可以节省资源清单运行时内存
+
+  ```csharp
+  class ScriptableBuildParameters
+  {
+      /// <summary>
+      /// 使用可寻址地址代替资源路径
+      /// 说明：开启此项可以节省运行时清单占用的内存！
+      /// </summary>
+      public bool ReplaceAssetPathWithAddress = false;
+  }
+  ```
+
+- (#648) 新增初始化参数，可以自动释放引用计数为零的资源包
+
+  ```csharp
+  class InitializeParameters
+  {
+      /// <summary>
+      /// 当资源引用计数为零的时候自动释放资源包
+      /// </summary>
+      public bool AutoUnloadBundleWhenUnused = false;
+  }
+  ```
+
+### Changed
+
+- 程序集宏定义代码转移到扩展工程。参考MacroSupport文件夹。
+
+## [2.3.16] - 2025-09-17
+
+### Improvements
+
+- (#638) 优化了Provider加载机制，引用计数为零时自动挂起！
+
+### Fixed
+
+- (#644) [**严重**] 修复了2.3.15版本，资产量巨大的情况下，编辑器下模拟模式初始化耗时很久的问题。
+
+### Added
+
+- (#639) 新增了文件系统参数：VIRTUAL_DOWNLOAD_MODE 和 VIRTUAL_DOWNLOAD_SPEED 
+
+  编辑器下不需要构建AB，也可以模拟远端资源下载，等同真机运行环境。
+
+  ```csharp
+  class DefaultEditorFIleSystem
+  {
+      /// <summary>
+      /// 模拟虚拟下载模式
+      /// </summary>
+      public bool VirtualDownloadMode { private set; get; } = false;
+  
+      /// <summary>
+      /// 模拟虚拟下载的网速（单位：字节）
+      /// </summary>
+      public int VirtualDownloadSpeed { private set; get; } = 1024;
+  }
+  ```
+
+- (#640) 新增了文件系统参数：VIRTUAL_WEBGL_MODE 
+
+  编辑器下不需要构建AB，也可以模拟小游戏开发环境，等同真机运行环境。
+
+  ```csharp
+  class DefaultEditorFIleSystem
+  {
+      /// <summary>
+      /// 模拟WebGL平台模式
+      /// </summary>
+      public bool VirtualWebGLMode { private set; get; } = false;
+  }
+  ```
+
+- (#642) 新增了文件系统参数：DOWNLOAD_WATCH_DOG_TIME
+
+  监控时间范围内，如果没有接收到任何下载数据，那么直接终止任务！
+
+  ```csharp
+  class DefaultCacheFIleSystem
+  {
+      /// <summary>
+      /// 自定义参数：下载任务的看门狗机制监控时间
+      /// </summary>
+      public int DownloadWatchDogTime { private set; get; } = int.MaxValue;
+  }
+  ```
+
+### Changed
+
+- 下载器参数timeout移除。
+
+  可以使用文件系统的看门狗机制代替。
+
+- (#632) IFilterRule接口变动。
+
+  收集器可以指定搜寻的资源类型，在收集目录资产量巨大的情况下，可以极大加快打包速度！
+
+  ```csharp
+  public interface IFilterRule
+  {
+      /// <summary>
+      /// 搜寻的资源类型
+      /// 说明：使用引擎方法搜索获取所有资源列表
+      /// </summary>
+      string FindAssetType { get; } 
+  }
+  ```
+
+  
+
+## [2.3.15] - 2025-09-09
+
+**重要**：升级了资源清单版本，不兼容老版本。建议重新提审安装包。
+
+### Improvements
+
+- 重构了UniTask扩展库的目录结构和说明文档。
+- 重构了内置文件系统类的加载和拷贝逻辑，解决在一些特殊机型上遇到的偶发性拷贝失败问题。
+- 增加了生成内置清单文件的窗口工具，详情见扩展工程里CreateBuildinCatalog目录。
+- 优化了异步操作系统的繁忙检测机制。
+- (#621) 资源配置页面可以展示DependCollector和StaticCollector包含的文件列表内容。
+- (#627) 优化了资源清单部分字段类型，CRC字段从字符串类型调整为整形，可以降低清单尺寸。
+
+### Fixed
+
+- 修复了构建页面扩展类缺少指定属性报错的问题。
+- (#611)  修复了资源扫描器配置页面，修改备注信息后会丢失焦点的问题。
+- (#622)  修复了纯鸿蒙系统读取内置加密文件失败的问题。
+- (#620)  修复了LINUX系统URL地址转换失败的问题。
+- (#631)  修复了NET 4.x程序集库Math.Clamp导致的编译错误。
+
+### Added
+
+- 新增了支持支付宝小游戏的文件系统扩展类。
+
+- 新增了支持Taptap小游戏的文件系统扩展类。
+
+- 新增了资源系统初始化参数：UseWeakReferenceHandle 
+
+  目前处于预览版，可以在引擎设置页面开启宏：YOOASSET_EXPERIMENTAL
+
+  ```csharp
+  /// <summary>
+  /// 启用弱引用资源句柄
+  /// </summary>
+  public bool UseWeakReferenceHandle = false;
+  ```
+
+- 内置文件系统和缓存文件系统新增初始化参数：FILE_VERIFY_MAX_CONCURRENCY 
+
+  ```csharp
+  /// <summary>
+  /// 自定义参数：初始化的时候缓存文件校验最大并发数
+  /// </summary>
+  public int FileVerifyMaxConcurrency { private set; get; }
+  ```
+
+- (#623)  内置构建管线新增构建参数：StripUnityVersion 
+
+  ```csharp
+  /// <summary>
+  /// 从文件头里剥离Unity版本信息
+  /// </summary>
+  public bool StripUnityVersion = false;
+  ```
+
+- 可编程构建管线新增构建参数：TrackSpriteAtlasDependencies
+
+  ```csharp
+  /// <summary>
+  /// 自动建立资源对象对图集的依赖关系
+  /// </summary>
+  public bool TrackSpriteAtlasDependencies = false;
+  ```
+
+- (#617) 新增资源收集配置参数：SupportExtensionless
+
+  在不需要模糊加载模式的前提下，关闭此选项，可以降低运行时内存大小。
+
+  该选项默认开启！
+
+  ```csharp
+  public class CollectCommand
+  {
+      /// <summary>
+      /// 支持无后缀名的资源定位地址
+      /// </summary>
+      public bool SupportExtensionless { set; get; }  
+  }
+  ```
+
+- (#625) 异步操作系统类新增监听方法。
+
+  ```csharp
+  class OperationSystem
+  {
+      /// <summary>
+      /// 监听任务开始
+      /// </summary>
+      public static void RegisterStartCallback(Action<string, AsyncOperationBase> callback);
+          
+      /// <summary>
+      /// 监听任务结束
+      /// </summary>
+      public static void RegisterFinishCallback(Action<string, AsyncOperationBase> callback);
+  }
+  ```
+
+  
+
+## [2.3.14] - 2025-07-23
+
+**重要**：**所有下载相关的超时参数（timeout）已更新判定逻辑**
+
+超时不再以‘指定时间内未接收到任何数据’为判定条件，而是以‘指定时间内未完成整个下载任务’为判定条件。
+
+### Improvements
+
+- 重构了核心代码的下载逻辑，解决了同步加载触发的下载任务没有完成的问题。
+- 扩展工程里新增了PreprocessBuildCatalog类，用于处理在构建应用程序前自动生成内置资源目录文件。
+- (#592) 优化了资源清单逻辑里不必要产生的GC逻辑。
+
+### Fixed
+
+- (#590) 修复了TryUnloadUnusedAsset方法，在依赖嵌套层数过深导致没有卸载的问题。
+
+### Added
+
+- 新增了支持Google Play的文件系统扩展示例。
+
+- 新增了支持DefaultCacheFileSystem的单元测试用例。
+
+- 新增了文件系统配置参数：DISABLE_ONDEMAND_DOWNLOAD
+
+  ```csharp
+  public class FileSystemParametersDefine
+  {
+      // 禁用边玩边下机制
+      public const string DISABLE_ONDEMAND_DOWNLOAD = "DISABLE_ONDEMAND_DOWNLO";
+  }
+  ```
+
+### Changed
+
+- IManifestServices接口拆分为了IManifestProcessServices和IManifestRestoreServices
+
+  ```csharp
+  public interface IManifestProcessServices
+  {
+      /// <summary>
+      /// 处理资源清单（压缩或加密）
+      /// </summary>
+      byte[] ProcessManifest(byte[] fileData);
+  }
+  
+  public interface IManifestRestoreServices
+  {
+      /// <summary>
+      /// 还原资源清单（解压或解密）
+      /// </summary>
+      byte[] RestoreManifest(byte[] fileData);
+  }
+  ```
+
+## [2.3.12] - 2025-07-01
+
+### Improvements
+
+- 优化了同步接口导致的资源拷贝和资源验证性能开销高的现象。
+- 微信小游戏和抖音小游戏支持资源清单加密。
+
+### Fixed
+
+- (#579) 修复了2.3.10版本资源包构建页面里CopyBuildinFileParam无法编辑问题。
+- (#572) 修复了资源收集页面指定收集的预制体名称变动的问题。
+- (#582) 修复了非递归收集依赖时，依赖列表中才包含主资源的问题。
+
+### Added
+
+- 新增初始化参数：WebGLForceSyncLoadAsset
+
+  ```csharp
+  public abstract class InitializeParameters
+  {
+      /// <summary>
+      /// WebGL平台强制同步加载资源对象
+      /// </summary>Add commentMore actions
+      public bool WebGLForceSyncLoadAsset = false;
+  }
+  ```
+
+- (#576) 新增了资源清单服务类：IManifestServices
+
+  ```csharp
+  /// <summary>
+  /// 资源清单文件处理服务接口
+  /// </summary>
+  public interface IManifestServices
+  {
+      /// <summary>
+      /// 处理资源清单（压缩和加密）
+      /// </summary>
+      byte[] ProcessManifest(byte[] fileData);
+          
+      /// <summary>
+      /// 还原资源清单（解压和解密）
+      /// </summary>
+      byte[] RestoreManifest(byte[] fileData);
+  } 
+  ```
+
+- (#585) 新增了本地文件拷贝服务类：ICopyLocalFileServices
+
+  ```csharp
+  /// <summary>
+  /// 本地文件拷贝服务类
+  /// </summary>
+  public interface ICopyLocalFileServices
+  {
+      void CopyFile(LocalFileInfo sourceFileInfo, string destFilePath);
+  }
+  ```
+
+## [2.3.10] - 2025-06-17
+
+### Improvements
+
+- 小游戏扩展库已经独立，可以单独导入到项目工程。
+- 编辑器里的TableView视图新增了AssetObjectCell类。
+- (#552) 微信小游戏文件系统类，增加了URL合法性的初始化检测机制。
+- (#566) 重构了资源构建页面，方便扩展自定义界面。
+- (#573) 完善了AssetDependencyDB的输出日志，可以正确输出丢失的引用资产信息。
+
+### Fixed
+
+- 修复太空战机DEMO在退出运行模式时的报错。
+- (#551) 修复了Unity2019, Unity2020的代码兼容性报错。
+- (#569) 修复了TVOS平台的兼容问题。  
+- (#564) 修复了TiktokFileSystem文件系统里appendTimeTicks无效的问题。
+
+### Added
+
+- (#562) 新增了解密方法。
+
+  ```csharp
+  public interface IDecryptionServices
+  {
+      /// <summary>
+      /// 后备方式获取解密的资源包对象
+      /// 注意：当正常解密方法失败后，会触发后备加载！
+      /// 说明：建议通过LoadFromMemory()方法加载资源对象作为保底机制。
+      /// issues : https://github.com/tuyoogame/YooAsset/issues/562
+      /// </summary>
+      DecryptResult LoadAssetBundleFallback(DecryptFileInfo fileInfo);    
+  }
+  ```
+
+
+
+## [2.3.9] - 2025-05-13
+
+### Improvements
+
+- 增加了YOO_ASSET_EXPERIMENT宏，用于控制实验性代码的开关。
+- 构建管线目前会输出构建日志到输出目录下，方便查看引擎在构建时主动清空的控制台日志。
+- 优化了收集器tag传染扩散逻辑，避免Group里配置了Tag导致的无意义的警告信息。
+- 扩展工程内PanelMonitor代码默认关闭状态。
+
+### Fixed
+
+- (#528) 修复了AssetDependencyDatabase在查询引擎资源对象是否存在的时效问题。
+
+### Added
+
+- (#542) 新增了资源管理系统销毁方法。
+
+  该方法会销毁所有的资源包裹和异步操作任务，以及卸载所有AssetBundle对象！
+
+  ```csharp
+  public class YooAssets
+  {
+      /// <summary>
+      /// 销毁资源系统
+      /// </summary>
+      public static void Destroy();
+  }
+  ```
+
+- 新增了SBP构建管线的构建参数
+
+  ```csharp
+  /// <summary>
+  /// 从AssetBundle文件头里剥离Unity版本信息
+  /// </summary>
+  public bool StripUnityVersion = false;
+  ```
+
+- 新增了构建错误码：BuiltinShadersBundleNameIsNull 
+
+## [2.3.8] - 2025-04-17
+
+### Improvements
+
+- 扩展工程里增加了“图集丢失变白块的解决方案”的相关代码。
+
+### Fixed
+
+- (#528) 修复了微信小游戏平台WXFSClearUnusedBundleFiles无法清理的问题。
+- (#531) 修复了微信小游戏平台WXFSClearUnusedBundleFiles没有适配BundleName_HashName命名方式。
+- (#533) 修复了Editor程序集下无法访问YooAsset.Editor程序集里的internal字段的问题。
+- (#534) 修复了资源报告窗口AssetView视图里，依赖资源包列表显示不准确的问题。
+
+## [2.3.7] - 2025-04-01
+
+### Improvements
+
+- (#526) 运行时资源清单的哈希值验证兼容了MD5和CRC32两种方式。
+- (#515) 优化了资源路径大小写不敏感的逻辑代码，减少字符串操作产生的GC。
+- (#523) UnloadUnusedAssetsOperation方法支持了分帧处理。
+
+### Fixed
+
+- (#520) 修复了UWP平台获取WWW加载路径未适配的问题。
+
+### Added
+
+- 新增了文件系统初始化参数：INSTALL_CLEAR_MODE
+
+  ```csharp
+  /// <summary>
+  /// 覆盖安装清理模式
+  /// </summary>
+  public enum EOverwriteInstallClearMode
+  {
+      /// <summary>
+      /// 不做任何处理
+      /// </summary>
+      None = 0,
+   
+      /// <summary>
+      /// 清理所有缓存文件（包含资源文件和清单文件）
+      /// </summary>
+      ClearAllCacheFiles = 1,
+   
+      /// <summary>
+      /// 清理所有缓存的资源文件
+      /// </summary>
+      ClearAllBundleFiles = 2,
+   
+      /// <summary>
+      /// 清理所有缓存的清单文件
+      /// </summary>
+      ClearAllManifestFiles = 3,
+  }
+  ```
+
+- 新增了初始化参数：BundleLoadingMaxConcurrency
+
+  ```csharp
+  public abstract class InitializeParameters
+  {
+      /// <summary>
+      /// 同时加载Bundle文件的最大并发数
+      /// </summary>
+      public int BundleLoadingMaxConcurrency = int.MaxValue;
+  }
+  ```
+
+## [2.3.6] - 2025-03-25
+
+### Improvements
+
+- 构建管线新增了TaskCreateCatalog任务节点。
+- 内置文件系统的catalog文件现在存储在streammingAssets目录下。
+
+### Fixed
+
+- (#486) 修复了微信小游戏文件系统调用ClearUnusedBundleFiles时候的异常。
+
+## [2.3.5-preview] - 2025-03-14
+
+### Fixed
+
+- (#502) 修复了原生缓存文件由于文件格式变动导致的加载本地缓存文件失败的问题。
+- (#504) 修复了MacOS平台Offline Play Mode模式请求本地资源清单失败的问题。
+- (#506) 修复了v2.3x版本LoadAllAssets方法计算依赖Bundle不完整的问题。
+- (#506) 修复了微信小游戏文件系统，在启用加密算法后卸载bundle报错的问题。
+
+## [2.3.4-preview] - 2025-03-08
+
+### Improvements
+
+- YooAsset支持了版本宏定义。
+
+  ```csharp
+  YOO_ASSET_2
+  YOO_ASSET_2_3
+  YOO_ASSET_2_3_OR_NEWER
+  ```
+
+### Fixed
+
+- (#389) 修复了禁用域重载(Reload Domain)的情况下，再次启动游戏报错的问题。
+- (#496) 修复了文件系统参数RESUME_DOWNLOAD_MINMUM_SIZE传入int值会导致异常的错误。
+- (#498) 修复了v2.3版本尝试加载安卓包内的原生资源包失败的问题。
+
+### Added
+
+- 新增了YooAssets.GetAllPackages()方法
+
+  ```csharp
+  /// <summary>
+  /// 获取所有资源包裹
+  /// </summary>
+  public static List<ResourcePackage> GetAllPackages()
+  ```
+
+## [2.3.3-preview] - 2025-03-06
+
+### Improvements
+
+- 新增了异步操作任务调试器，AssetBundleDebugger窗口-->OperationView视图模式
+- 编辑器下模拟构建默认启用依赖关系数据库，可以大幅降低编辑器下启动游戏的时间。
+- 单元测试用例增加加密解密测试用例。
+
+### Fixed
+
+- (#492) 修复了发布的MAC平台应用，在启动的时候提示权限无法获取的问题。
+
+## [2.3.2-preview] - 2025-02-27
+
+### Fixed
+
+- (2.3.1) 修复小游戏平台下载器不生效的问题。
+- (#480) 修复了Unity工程打包导出时的报错。
+
+### Added
+
+- 下载器新增参数：recursiveDownload
+
+  ```csharp
+  /// <summary>
+  /// 创建资源下载器，用于下载指定的资源依赖的资源包文件
+  /// </summary>
+  /// <param name="recursiveDownload">下载资源对象所属资源包内所有资源对象依赖的资源包
+  public ResourceDownloaderOperation CreateBundleDownloader()
+  ```
+
+- 新增CustomPlayMode模式
+
+  ```csharp
+  /// <summary>
+  /// 自定义运行模式的初始化参数
+  /// </summary>
+  public class CustomPlayModeParameters : InitializeParameters
+  {
+      /// <summary>
+      /// 文件系统初始化参数列表
+      /// 注意：列表最后一个元素作为主文件系统！
+      /// </summary>
+      public List<FileSystemParameters> FileSystemParameterList;
+  }
+  ```
+
+## [2.3.1-preview] - 2025-02-25
+
+**资源加载依赖计算方式还原为了1.5x版本的模式，只加载资源对象实际依赖的资源包，不再以资源对象所在资源包的依赖关系为加载标准**。
+
+### Improvements
+
+- 优化OperationSystem的更新机制，异步加载的耗时降低了50%。
+- 优化了Debugger窗口的显示页面，BundleView页面增加资源包的引用列表。
+- 优化了Reporter窗口的显示页面。
+
+### Fixed
+
+- 修复了怀旧依赖模式下，TAG传染不正确的问题。
+
+## [2.3.0-preview] - 2025-02-19
+
+### Improvements
+
+资源收集窗口列表元素支持手动上下拖拽排序！
+
+资源扫描窗口列表元素支持手动上下拖拽排序！
+
+### Added
+
+- 新增了UIElements扩展类ReorderableListView
+
+- 新增初始化方法
+
+  ```csharp
+  public class YooAssets
+  {
+      /// <summary>
+      /// 设置异步系统参数，快速启动模式的开关
+      /// 注意：该模式默认开启
+      /// </summary>
+      public static void SetOperationSystemQuickStartMode(bool state)
+  }
+  ```
+
+- 新增打包构建参数
+
+  ```csharp
+  public class BuildParameters
+  {
+      /// <summary>
+      /// 旧版依赖模式
+      /// 说明：兼容YooAssets1.5.x版本
+      /// </summary>
+      public bool LegacyDependency = false;    
+  }
+  ```
+
+### Fixed
+
+- (#472) 修复了Unity6平台，TableView视图无法显示问题。
+- 修复了微信小游戏和抖音小游戏未正确使用插件的卸载方法。
+
 ## [2.2.12] - 2025-02-14
 
 ### Improvements

@@ -13,6 +13,8 @@ namespace YooAsset.Editor
         public class BuildResultContext : IContextObject
         {
             public IBundleBuildResults Results;
+            public string BuiltinShadersBundleName;
+            public string MonoScriptsBundleName;
         }
 
         void IBuildTask.Run(BuildContext context)
@@ -22,7 +24,8 @@ namespace YooAsset.Editor
             var scriptableBuildParameters = buildParametersContext.Parameters as ScriptableBuildParameters;
 
             // 构建内容
-            var buildContent = new BundleBuildContent(buildMapContext.GetPipelineBuilds());
+            var bundleBuilds = buildMapContext.GetPipelineBuilds(scriptableBuildParameters.ReplaceAssetPathWithAddress);
+            var buildContent = new BundleBuildContent(bundleBuilds);
 
             // 开始构建
             IBundleBuildResults buildResults;
@@ -53,6 +56,8 @@ namespace YooAsset.Editor
             BuildLogger.Log("UnityEngine build success!");
             BuildResultContext buildResultContext = new BuildResultContext();
             buildResultContext.Results = buildResults;
+            buildResultContext.BuiltinShadersBundleName = builtinShadersBundleName;
+            buildResultContext.MonoScriptsBundleName = monoScriptsBundleName;
             context.SetContextObject(buildResultContext);
         }
     }

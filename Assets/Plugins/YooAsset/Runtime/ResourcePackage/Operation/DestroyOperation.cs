@@ -13,20 +13,22 @@ namespace YooAsset
         }
 
         private readonly ResourcePackage _resourcePackage;
+        private readonly UnloadAllAssetsOptions _options;
         private UnloadAllAssetsOperation _unloadAllAssetsOp;
         private ESteps _steps = ESteps.None;
 
 
-        public DestroyOperation(ResourcePackage resourcePackage)
+        public DestroyOperation(ResourcePackage resourcePackage, UnloadAllAssetsOptions options)
         {
             _resourcePackage = resourcePackage;
+            _options = options;
         }
 
-        internal override void InternalOnStart()
+        internal override void InternalStart()
         {
             _steps = ESteps.CheckInitStatus;
         }
-        internal override void InternalOnUpdate()
+        internal override void InternalUpdate()
         {
             if (_steps == ESteps.None || _steps == ESteps.Done)
                 return;
@@ -63,8 +65,13 @@ namespace YooAsset
             if (_steps == ESteps.UnloadAllAssets)
             {
                 if (_unloadAllAssetsOp == null)
-                    _unloadAllAssetsOp = _resourcePackage.UnloadAllAssetsAsync();
+                {
+                    _unloadAllAssetsOp = _resourcePackage.UnloadAllAssetsAsync(_options);
+                    _unloadAllAssetsOp.StartOperation();
+                    AddChildOperation(_unloadAllAssetsOp);
+                }
 
+                _unloadAllAssetsOp.UpdateOperation();
                 if (_unloadAllAssetsOp.IsDone == false)
                     return;
 
@@ -92,6 +99,10 @@ namespace YooAsset
                 _steps = ESteps.Done;
                 Status = EOperationStatus.Succeed;
             }
+        }
+        internal override string InternalGetDesc()
+        {
+            return $"PackageVersion : {_resourcePackage.GetPackageVersion()}";
         }
     }
 }

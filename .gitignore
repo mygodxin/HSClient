@@ -75,3 +75,7 @@ ServerData/
 HybridCLRData/
 
 Assets/Font/main.asset
+.utmp/
+.idea/
+.vscode/
+Bundles/

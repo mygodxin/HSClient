@@ -23,7 +23,7 @@ namespace YooAsset
             None,
             CheckOptions,
             ReleaseAll,
-            AbortDownload,
+            TryAbortLoader,
             CheckLoading,
             DestroyAll,
             Done,
@@ -38,11 +38,11 @@ namespace YooAsset
             _resManager = resourceManager;
             _options = options;
         }
-        internal override void InternalOnStart()
+        internal override void InternalStart()
         {
             _steps = ESteps.CheckOptions;
         }
-        internal override void InternalOnUpdate()
+        internal override void InternalUpdate()
         {
             if (_steps == ESteps.None || _steps == ESteps.Done)
                 return;
@@ -78,15 +78,16 @@ namespace YooAsset
                     }
                 }
 
-                _steps = ESteps.AbortDownload;
+                _steps = ESteps.TryAbortLoader;
             }
 
-            if (_steps == ESteps.AbortDownload)
+            if (_steps == ESteps.TryAbortLoader)
             {
-                // 注意：终止所有下载任务
+                // 尝试终止所有加载任务
+                // 注意：正在加载AssetBundle的任务无法终止
                 foreach (var loader in _resManager.LoaderDic.Values)
                 {
-                    loader.AbortDownloadOperation();
+                    loader.TryAbortLoader();
                 }
                 _steps = ESteps.CheckLoading;
             }

@@ -22,6 +22,12 @@ public class TextureSchema : ScannerSchema
     public int MaxHeight = 1024;
 
     /// <summary>
+    /// 测试列表
+    /// </summary>
+    public List<string> TestStringValues = new List<string>();
+    
+
+    /// <summary>
     /// 获取用户指南信息
     /// </summary>
     public override string GetUserGuide()
@@ -38,10 +44,10 @@ public class TextureSchema : ScannerSchema
         string name = "扫描所有纹理资产";
         string desc = GetUserGuide();
         var report = new ScanReport(name, desc);
-        report.AddHeader("资源路径", 600, 500, 1000).SetStretchable().SetSearchable().SetSortable().SetHeaderType(EHeaderType.AssetPath);
+        report.AddHeader("资源路径", 600, 500, 1000).SetStretchable().SetSearchable().SetSortable().SetCounter().SetHeaderType(EHeaderType.AssetPath);
         report.AddHeader("图片宽度", 100).SetSortable().SetHeaderType(EHeaderType.LongValue);
         report.AddHeader("图片高度", 100).SetSortable().SetHeaderType(EHeaderType.LongValue);
-        report.AddHeader("内存大小", 100).SetSortable().SetHeaderType(EHeaderType.LongValue);
+        report.AddHeader("内存大小", 120).SetSortable().SetUnits("bytes").SetHeaderType(EHeaderType.LongValue);
         report.AddHeader("苹果格式", 100);
         report.AddHeader("安卓格式", 100);
         report.AddHeader("错误信息", 500).SetStretchable();
@@ -176,6 +182,14 @@ public class TextureSchema : ScannerSchema
             MaxHeight = evt.newValue;
         });
         container.Add(maxHeightField);
+
+        // 创建测试列表
+#if UNITY_2021_3_OR_NEWER
+        ReorderableListView reorderableListView = new ReorderableListView();
+        reorderableListView.SourceData = TestStringValues;
+        reorderableListView.HeaderName = "测试列表";
+        container.Add(reorderableListView);
+#endif
 
         SchemaInspector inspector = new SchemaInspector(container);
         return inspector;

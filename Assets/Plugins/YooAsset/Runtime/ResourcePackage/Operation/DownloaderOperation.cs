@@ -40,7 +40,6 @@ namespace YooAsset
         private readonly string _packageName;
         private readonly int _downloadingMaxNumber;
         private readonly int _failedTryAgain;
-        private readonly int _timeout;
         private readonly List<BundleInfo> _bundleInfoList;
         private readonly List<FSDownloadFileOperation> _downloaders = new List<FSDownloadFileOperation>(MAX_LOADER_COUNT);
         private readonly List<FSDownloadFileOperation> _removeList = new List<FSDownloadFileOperation>(MAX_LOADER_COUNT);
@@ -100,15 +99,14 @@ namespace YooAsset
         /// 当开始下载某个文件
         /// </summary>
         public DownloadFileBegin DownloadFileBeginCallback { set; get; }
-        
 
-        internal DownloaderOperation(string packageName, List<BundleInfo> downloadList, int downloadingMaxNumber, int failedTryAgain, int timeout)
+
+        internal DownloaderOperation(string packageName, List<BundleInfo> downloadList, int downloadingMaxNumber, int failedTryAgain)
         {
             _packageName = packageName;
             _bundleInfoList = downloadList;
             _downloadingMaxNumber = UnityEngine.Mathf.Clamp(downloadingMaxNumber, 1, MAX_LOADER_COUNT); ;
             _failedTryAgain = failedTryAgain;
-            _timeout = timeout;
 
             // 设置包裹名称 (fix #210)
             SetPackageName(packageName);
@@ -116,12 +114,12 @@ namespace YooAsset
             // 统计下载信息
             CalculatDownloaderInfo();
         }
-        internal override void InternalOnStart()
+        internal override void InternalStart()
         {
             YooLogger.Log($"Begine to download {TotalDownloadCount} files and {TotalDownloadBytes} bytes");
             _steps = ESteps.Check;
         }
-        internal override void InternalOnUpdate()
+        internal override void InternalUpdate()
         {
             if (_steps == ESteps.None || _steps == ESteps.Done)
                 return;
@@ -147,6 +145,7 @@ namespace YooAsset
                 long downloadBytes = _cachedDownloadBytes;
                 foreach (var downloader in _downloaders)
                 {
+                    downloader.UpdateOperation();
                     downloadBytes += downloader.DownloadedBytes;
                     if (downloader.IsDone == false)
                         continue;
@@ -202,7 +201,10 @@ namespace YooAsset
                     {
                         int index = _bundleInfoList.Count - 1;
                         var bundleInfo = _bundleInfoList[index];
-                        var downloader = bundleInfo.CreateDownloader(_failedTryAgain, _timeout);
+                        var downloader = bundleInfo.CreateDownloader(_failedTryAgain);
+                        downloader.StartOperation();
+                        this.AddChildOperation(downloader);
+
                         _downloaders.Add(downloader);
                         _bundleInfoList.RemoveAt(index);
 
@@ -362,7 +364,7 @@ namespace YooAsset
 
                 foreach (var downloader in _downloaders)
                 {
-                    downloader.Release();
+                    downloader.AbortOperation();
                 }
             }
         }
@@ -370,52 +372,52 @@ namespace YooAsset
 
     public sealed class ResourceDownloaderOperation : DownloaderOperation
     {
-        internal ResourceDownloaderOperation(string packageName, List<BundleInfo> downloadList, int downloadingMaxNumber, int failedTryAgain, int timeout)
-            : base(packageName, downloadList, downloadingMaxNumber, failedTryAgain, timeout)
+        internal ResourceDownloaderOperation(string packageName, List<BundleInfo> downloadList, int downloadingMaxNumber, int failedTryAgain)
+            : base(packageName, downloadList, downloadingMaxNumber, failedTryAgain)
         {
         }
 
         /// <summary>
         /// 创建空的下载器
         /// </summary>
-        internal static ResourceDownloaderOperation CreateEmptyDownloader(string packageName, int downloadingMaxNumber, int failedTryAgain, int timeout)
+        internal static ResourceDownloaderOperation CreateEmptyDownloader(string packageName, int downloadingMaxNumber, int failedTryAgain)
         {
             List<BundleInfo> downloadList = new List<BundleInfo>();
-            var operation = new ResourceDownloaderOperation(packageName, downloadList, downloadingMaxNumber, failedTryAgain, timeout);
+            var operation = new ResourceDownloaderOperation(packageName, downloadList, downloadingMaxNumber, failedTryAgain);
             return operation;
         }
     }
     public sealed class ResourceUnpackerOperation : DownloaderOperation
     {
-        internal ResourceUnpackerOperation(string packageName, List<BundleInfo> downloadList, int downloadingMaxNumber, int failedTryAgain, int timeout)
-            : base(packageName, downloadList, downloadingMaxNumber, failedTryAgain, timeout)
+        internal ResourceUnpackerOperation(string packageName, List<BundleInfo> downloadList, int downloadingMaxNumber, int failedTryAgain)
+            : base(packageName, downloadList, downloadingMaxNumber, failedTryAgain)
         {
         }
 
         /// <summary>
         /// 创建空的解压器
         /// </summary>
-        internal static ResourceUnpackerOperation CreateEmptyUnpacker(string packageName, int upackingMaxNumber, int failedTryAgain, int timeout)
+        internal static ResourceUnpackerOperation CreateEmptyUnpacker(string packageName, int upackingMaxNumber, int failedTryAgain)
         {
             List<BundleInfo> downloadList = new List<BundleInfo>();
-            var operation = new ResourceUnpackerOperation(packageName, downloadList, upackingMaxNumber, failedTryAgain, int.MaxValue);
+            var operation = new ResourceUnpackerOperation(packageName, downloadList, upackingMaxNumber, failedTryAgain);
             return operation;
         }
     }
     public sealed class ResourceImporterOperation : DownloaderOperation
     {
-        internal ResourceImporterOperation(string packageName, List<BundleInfo> downloadList, int downloadingMaxNumber, int failedTryAgain, int timeout)
-            : base(packageName, downloadList, downloadingMaxNumber, failedTryAgain, timeout)
+        internal ResourceImporterOperation(string packageName, List<BundleInfo> downloadList, int downloadingMaxNumber, int failedTryAgain)
+            : base(packageName, downloadList, downloadingMaxNumber, failedTryAgain)
         {
         }
 
         /// <summary>
         /// 创建空的导入器
         /// </summary>
-        internal static ResourceImporterOperation CreateEmptyImporter(string packageName, int upackingMaxNumber, int failedTryAgain, int timeout)
+        internal static ResourceImporterOperation CreateEmptyImporter(string packageName, int upackingMaxNumber, int failedTryAgain)
         {
             List<BundleInfo> downloadList = new List<BundleInfo>();
-            var operation = new ResourceImporterOperation(packageName, downloadList, upackingMaxNumber, failedTryAgain, int.MaxValue);
+            var operation = new ResourceImporterOperation(packageName, downloadList, upackingMaxNumber, failedTryAgain);
             return operation;
         }
     }

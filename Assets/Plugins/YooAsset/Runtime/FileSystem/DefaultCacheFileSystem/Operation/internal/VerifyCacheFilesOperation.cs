@@ -37,12 +37,12 @@ namespace YooAsset
             _waitingList = elements;
             _fileVerifyLevel = fileSystem.FileVerifyLevel;
         }
-        internal override void InternalOnStart()
+        internal override void InternalStart()
         {
             _steps = ESteps.InitVerify;
             _verifyStartTime = UnityEngine.Time.realtimeSinceStartup;
         }
-        internal override void InternalOnUpdate()
+        internal override void InternalUpdate()
         {
             if (_steps == ESteps.None || _steps == ESteps.Done)
                 return;
@@ -54,11 +54,13 @@ namespace YooAsset
                 // 设置同时验证的最大数
                 ThreadPool.GetMaxThreads(out int workerThreads, out int ioThreads);
                 YooLogger.Log($"Work threads : {workerThreads}, IO threads : {ioThreads}");
-                _verifyMaxNum = Math.Min(workerThreads, ioThreads);
+                int threads = Math.Min(workerThreads, ioThreads);
+                _verifyMaxNum = Math.Min(threads, _fileSystem.FileVerifyMaxConcurrency);
                 _verifyTotalCount = fileCount;
                 if (_verifyMaxNum < 1)
                     _verifyMaxNum = 1;
 
+                YooLogger.Log($"Verify max concurrency : {_verifyMaxNum}");
                 _verifyingList = new List<VerifyFileElement>(_verifyMaxNum);
                 _steps = ESteps.UpdateVerify;
             }

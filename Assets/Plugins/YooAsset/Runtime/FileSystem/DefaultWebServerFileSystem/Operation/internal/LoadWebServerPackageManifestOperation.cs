@@ -15,6 +15,7 @@ namespace YooAsset
         private readonly DefaultWebServerFileSystem _fileSystem;
         private readonly string _packageVersion;
         private readonly string _packageHash;
+        private readonly int _timeout;
         private UnityWebDataRequestOperation _webDataRequestOp;
         private DeserializeManifestOperation _deserializer;
         private ESteps _steps = ESteps.None;
@@ -25,17 +26,18 @@ namespace YooAsset
         public PackageManifest Manifest { private set; get; }
 
 
-        internal LoadWebServerPackageManifestOperation(DefaultWebServerFileSystem fileSystem, string packageVersion, string packageHash)
+        internal LoadWebServerPackageManifestOperation(DefaultWebServerFileSystem fileSystem, string packageVersion, string packageHash, int timeout)
         {
             _fileSystem = fileSystem;
             _packageVersion = packageVersion;
             _packageHash = packageHash;
+            _timeout = timeout;
         }
-        internal override void InternalOnStart()
+        internal override void InternalStart()
         {
             _steps = ESteps.RequestFileData;
         }
-        internal override void InternalOnUpdate()
+        internal override void InternalUpdate()
         {
             if (_steps == ESteps.None || _steps == ESteps.Done)
                 return;
@@ -46,10 +48,12 @@ namespace YooAsset
                 {
                     string filePath = _fileSystem.GetWebPackageManifestFilePath(_packageVersion);
                     string url = DownloadSystemHelper.ConvertToWWWPath(filePath);
-                    _webDataRequestOp = new UnityWebDataRequestOperation(url);
-                    OperationSystem.StartOperation(_fileSystem.PackageName, _webDataRequestOp);
+                    _webDataRequestOp = new UnityWebDataRequestOperation(url, _timeout);
+                    _webDataRequestOp.StartOperation();
+                    AddChildOperation(_webDataRequestOp);
                 }
 
+                _webDataRequestOp.UpdateOperation();
                 if (_webDataRequestOp.IsDone == false)
                     return;
 
@@ -67,8 +71,7 @@ namespace YooAsset
 
             if (_steps == ESteps.VerifyFileData)
             {
-                string fileHash = HashUtility.BytesCRC32(_webDataRequestOp.Result);
-                if (fileHash == _packageHash)
+                if (ManifestTools.VerifyManifestData(_webDataRequestOp.Result, _packageHash))
                 {
                     _steps = ESteps.LoadManifest;
                 }
@@ -84,10 +87,12 @@ namespace YooAsset
             {
                 if (_deserializer == null)
                 {
-                    _deserializer = new DeserializeManifestOperation(_webDataRequestOp.Result);
-                    OperationSystem.StartOperation(_fileSystem.PackageName, _deserializer);
+                    _deserializer = new DeserializeManifestOperation(_fileSystem.ManifestServices, _webDataRequestOp.Result);
+                    _deserializer.StartOperation();
+                    AddChildOperation(_deserializer);
                 }
 
+                _deserializer.UpdateOperation();
                 Progress = _deserializer.Progress;
                 if (_deserializer.IsDone == false)
                     return;
@@ -105,6 +110,10 @@ namespace YooAsset
                     Error = _deserializer.Error;
                 }
             }
+        }
+        internal override string InternalGetDesc()
+        {
+            return $"PackageVersion : {_packageVersion} PackageHash : {_packageHash}";
         }
     }
 }

@@ -9,11 +9,12 @@ namespace YooAsset
         private enum ESteps
         {
             None,
-            LoadFile,
+            CheckConcurrency,
+            LoadBundleFile,
             Done,
         }
 
-        private readonly ResourceManager _resourceManager;
+        private readonly ResourceManager _resManager;
         private readonly List<ProviderOperation> _providers = new List<ProviderOperation>(100);
         private readonly List<ProviderOperation> _removeList = new List<ProviderOperation>(100);
         private FSLoadBundleOperation _loadBundleOp;
@@ -52,26 +53,47 @@ namespace YooAsset
 
         internal LoadBundleFileOperation(ResourceManager resourceManager, BundleInfo bundleInfo)
         {
-            _resourceManager = resourceManager;
+            _resManager = resourceManager;
             LoadBundleInfo = bundleInfo;
         }
-        internal override void InternalOnStart()
+        internal override void InternalStart()
         {
-            _steps = ESteps.LoadFile;
+            _steps = ESteps.CheckConcurrency;
         }
-        internal override void InternalOnUpdate()
+        internal override void InternalUpdate()
         {
             if (_steps == ESteps.None || _steps == ESteps.Done)
                 return;
 
-            if (_steps == ESteps.LoadFile)
+            if (_steps == ESteps.CheckConcurrency)
+            {
+                if (IsWaitForAsyncComplete)
+                {
+                    _steps = ESteps.LoadBundleFile;
+                }
+                else
+                {
+                    if (_resManager.BundleLoadingIsBusy())
+                        return;
+                    _steps = ESteps.LoadBundleFile;
+                }
+            }
+
+            if (_steps == ESteps.LoadBundleFile)
             {
                 if (_loadBundleOp == null)
+                {
+                    // 统计计数增加
+                    _resManager.BundleLoadingCounter++;
                     _loadBundleOp = LoadBundleInfo.LoadBundleFile();
+                    _loadBundleOp.StartOperation();
+                    AddChildOperation(_loadBundleOp);
+                }
 
                 if (IsWaitForAsyncComplete)
                     _loadBundleOp.WaitForAsyncComplete();
 
+                _loadBundleOp.UpdateOperation();
                 DownloadProgress = _loadBundleOp.DownloadProgress;
                 DownloadedBytes = _loadBundleOp.DownloadedBytes;
                 if (_loadBundleOp.IsDone == false)
@@ -98,6 +120,9 @@ namespace YooAsset
                     Status = EOperationStatus.Failed;
                     Error = _loadBundleOp.Error;
                 }
+
+                // 统计计数减少
+                _resManager.BundleLoadingCounter--;
             }
         }
         internal override void InternalWaitForAsyncComplete()
@@ -110,6 +135,10 @@ namespace YooAsset
                     break;
                 }
             }
+        }
+        internal override string InternalGetDesc()
+        {
+            return $"BundleName : {LoadBundleInfo.Bundle.BundleName}";
         }
 
         /// <summary>
@@ -135,14 +164,22 @@ namespace YooAsset
         {
             IsDestroyed = true;
 
-            // Check fatal
+            // 注意：正在加载中的任务不可以销毁
+            if (_steps == ESteps.LoadBundleFile)
+                throw new Exception($"Bundle file loader is not done : {LoadBundleInfo.Bundle.BundleName}");
+
             if (RefCount > 0)
                 throw new Exception($"Bundle file loader ref is not zero : {LoadBundleInfo.Bundle.BundleName}");
-            if (IsDone == false)
-                throw new Exception($"Bundle file loader is not done : {LoadBundleInfo.Bundle.BundleName}");
 
             if (Result != null)
                 Result.UnloadBundleFile();
+
+            if (IsDone == false)
+            {
+                _steps = ESteps.Done;
+                Status = EOperationStatus.Failed;
+                Error = "Bundle loader destroyed !";
+            }
         }
 
         /// <summary>
@@ -150,10 +187,42 @@ namespace YooAsset
         /// </summary>
         public bool CanDestroyLoader()
         {
-            if (IsDone == false)
+            if (CanReleasableLoader() == false)
                 return false;
 
-            return RefCount <= 0;
+            // YOOASSET_LEGACY_DEPENDENCY
+            // 检查引用链上的资源包是否已经全部销毁
+            // 注意：互相引用的资源包无法卸载！
+            if (LoadBundleInfo.Bundle.ReferenceBundleIDs.Count > 0)
+            {
+                foreach (var bundleID in LoadBundleInfo.Bundle.ReferenceBundleIDs)
+                {
+#if YOOASSET_EXPERIMENTAL
+                    if (_resManager.CheckBundleReleasable(bundleID) == false)
+                        return false;
+#else
+                    if (_resManager.CheckBundleDestroyed(bundleID) == false)
+                        return false;
+#endif
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 是否可以释放
+        /// </summary>
+        public bool CanReleasableLoader()
+        {
+            // 注意：正在加载中的任务不可以销毁
+            if (_steps == ESteps.LoadBundleFile)
+                return false;
+
+            if (RefCount > 0)
+                return false;
+
+            return true;
         }
 
         /// <summary>
@@ -190,18 +259,32 @@ namespace YooAsset
             // 移除资源提供者
             if (_removeList.Count > 0)
             {
-                _resourceManager.RemoveBundleProviders(_removeList);
+                _resManager.RemoveBundleProviders(_removeList);
                 _removeList.Clear();
             }
         }
 
         /// <summary>
-        /// 终止下载任务
+        /// 尝试终止加载器
         /// </summary>
-        public void AbortDownloadOperation()
+        public void TryAbortLoader()
         {
-            if (_loadBundleOp != null)
-                _loadBundleOp.AbortDownloadOperation();
+            if (IsDone == false)
+            {
+                if (_steps == ESteps.CheckConcurrency)
+                {
+                    _steps = ESteps.Done;
+                    Status = EOperationStatus.Failed;
+                    Error = "Abort bundle loader !";
+                }
+
+                if (_steps == ESteps.LoadBundleFile)
+                {
+                    // 注意：终止下载器
+                    if (_loadBundleOp != null)
+                        _loadBundleOp.AbortDownloadFile = true;
+                }
+            }
         }
     }
 }

@@ -58,9 +58,14 @@ namespace YooAsset
         public bool DisableUnityWebCache { private set; get; } = false;
 
         /// <summary>
-        ///  自定义参数：解密方法类
+        ///  自定义参数：解密服务接口的实例类
         /// </summary>
         public IWebDecryptionServices DecryptionServices { private set; get; }
+
+        /// <summary>
+        /// 自定义参数：资源清单服务类
+        /// </summary>
+        public IManifestRestoreServices ManifestServices { private set; get; }
         #endregion
 
 
@@ -70,28 +75,24 @@ namespace YooAsset
         public virtual FSInitializeFileSystemOperation InitializeFileSystemAsync()
         {
             var operation = new DWSFSInitializeOperation(this);
-            OperationSystem.StartOperation(PackageName, operation);
             return operation;
         }
         public virtual FSLoadPackageManifestOperation LoadPackageManifestAsync(string packageVersion, int timeout)
         {
             var operation = new DWSFSLoadPackageManifestOperation(this, packageVersion, timeout);
-            OperationSystem.StartOperation(PackageName, operation);
             return operation;
         }
         public virtual FSRequestPackageVersionOperation RequestPackageVersionAsync(bool appendTimeTicks, int timeout)
         {
             var operation = new DWSFSRequestPackageVersionOperation(this, timeout);
-            OperationSystem.StartOperation(PackageName, operation);
             return operation;
         }
-        public virtual FSClearCacheFilesOperation ClearCacheFilesAsync(PackageManifest manifest, string clearMode, object clearParam)
+        public virtual FSClearCacheFilesOperation ClearCacheFilesAsync(PackageManifest manifest, ClearCacheFilesOptions options)
         {
             var operation = new FSClearCacheFilesCompleteOperation();
-            OperationSystem.StartOperation(PackageName, operation);
             return operation;
         }
-        public virtual FSDownloadFileOperation DownloadFileAsync(PackageBundle bundle, DownloadParam param)
+        public virtual FSDownloadFileOperation DownloadFileAsync(PackageBundle bundle, DownloadFileOptions options)
         {
             throw new System.NotImplementedException();
         }
@@ -100,14 +101,12 @@ namespace YooAsset
             if (bundle.BundleType == (int)EBuildBundleType.AssetBundle)
             {
                 var operation = new DWSFSLoadAssetBundleOperation(this, bundle);
-                OperationSystem.StartOperation(PackageName, operation);
                 return operation;
             }
             else
             {
                 string error = $"{nameof(DefaultWebServerFileSystem)} not support load bundle type : {bundle.BundleType}";
                 var operation = new FSLoadBundleCompleteOperation(error);
-                OperationSystem.StartOperation(PackageName, operation);
                 return operation;
             }
         }
@@ -116,11 +115,15 @@ namespace YooAsset
         {
             if (name == FileSystemParametersDefine.DISABLE_UNITY_WEB_CACHE)
             {
-                DisableUnityWebCache = (bool)value;
+                DisableUnityWebCache = Convert.ToBoolean(value);
             }
             else if (name == FileSystemParametersDefine.DECRYPTION_SERVICES)
             {
                 DecryptionServices = (IWebDecryptionServices)value;
+            }
+            else if (name == FileSystemParametersDefine.MANIFEST_SERVICES)
+            {
+                ManifestServices = (IManifestRestoreServices)value;
             }
             else
             {
@@ -136,7 +139,7 @@ namespace YooAsset
             else
                 _webPackageRoot = packageRoot;
         }
-        public virtual void OnUpdate()
+        public virtual void OnDestroy()
         {
         }
 
@@ -204,10 +207,9 @@ namespace YooAsset
             string fileName = YooAssetSettingsData.GetManifestBinaryFileName(PackageName, packageVersion);
             return PathUtility.Combine(FileRoot, fileName);
         }
-        public string GetCatalogFileLoadPath()
+        public string GetCatalogBinaryFileLoadPath()
         {
-            string fileName = Path.GetFileNameWithoutExtension(DefaultBuildinFileSystemDefine.BuildinCatalogFileName);
-            return YooAssetSettingsData.GetYooResourcesLoadPath(PackageName, fileName);
+            return PathUtility.Combine(_webPackageRoot, DefaultBuildinFileSystemDefine.BuildinCatalogBinaryFileName);
         }
 
         /// <summary>
