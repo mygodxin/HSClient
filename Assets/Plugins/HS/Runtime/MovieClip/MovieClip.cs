@@ -7,8 +7,7 @@ namespace HS
     /// <summary>
     /// 序列帧动画
     /// </summary>
-    [RequireComponent(typeof(Image))]
-    public class MovieClip : MonoBehaviour
+    public class MovieClip : Image
     {
         /// <summary>
         /// 动画帧
@@ -24,10 +23,6 @@ namespace HS
         /// </summary>
         public Sprite[] Sprites;
 
-        /// <summary>
-        /// 播放间隔(s)
-        /// </summary>
-        public float Interval = 0.2f;
 
         /// <summary>
         /// 
@@ -49,6 +44,7 @@ namespace HS
         /// </summary>
         public bool ignoreEngineTimeScale = false;
 
+        public float Interval = 0.2f;
         Frame[] _frames;
         int _frameCount;
         int _frame;
@@ -58,9 +54,8 @@ namespace HS
         int _end;
         int _times;
         int _endAt;
-        int _status; //0-none, 1-next loop, 2-ending, 3-ended
+        int _status; //0-none, 1-next _loop, 2-ending, 3-ended
 
-        int _timerID;
         float _frameElapsed; //当前帧延迟
         bool _reversed;
         int _repeatedCount;
@@ -69,19 +64,18 @@ namespace HS
         public Image _image;
 
 
-        private void Awake()
+        protected override void Awake()
         {
-            Init();
-            SetPlaySettings();
+            base.Awake();
         }
 
         public void Init()
         {
-            _image = transform.GetComponent<Image>();
+            _image = this;
 
-            _frameCount = Sprites.Length;
-            _frames = new Frame[Sprites.Length];
-            for (int i = 0; i < Sprites.Length; i++)
+            _frameCount = Sprites != null ? Sprites.Length : 0;
+            _frames = new Frame[_frameCount];
+            for (int i = 0; i < _frameCount; i++)
             {
                 _frames[i] = new Frame();
                 _frames[i].addDelay = 0;
@@ -105,7 +99,6 @@ namespace HS
                 {
                     _frameCount = 0;
                     _image.sprite = null;
-                    CheckTimer();
                     return;
                 }
                 _frameCount = Frames.Length;
@@ -122,7 +115,6 @@ namespace HS
                 _reversed = false;
 
                 DrawFrame();
-                CheckTimer();
             }
         }
 
@@ -137,7 +129,6 @@ namespace HS
                 if (_playing != value)
                 {
                     _playing = value;
-                    CheckTimer();
                 }
             }
         }
@@ -283,28 +274,9 @@ namespace HS
             this._onPlayEnd = onPlayEnd;
         }
 
-        protected virtual void OnEnable()
+        void Update()
         {
-            if (_playing && _frameCount > 0)
-            {
-                _timerID = Timer.Inst.SetInterval(0.001f, () => { OnTimer(); });
-            }
-        }
-
-        protected virtual void OnDisable()
-        {
-            Timer.Inst.RemoveTimer(_timerID);
-        }
-
-        protected virtual void CheckTimer()
-        {
-            if (!Application.isPlaying)
-                return;
-
-            if (_playing && _frameCount > 0 && this.transform.parent != null)
-                _timerID = Timer.Inst.SetInterval(0.001f, () => { OnTimer(); });
-            else
-                Timer.Inst.RemoveTimer(_timerID);
+            OnTimer();
         }
 
         public void OnTimer(float dt = 0)
@@ -370,7 +342,7 @@ namespace HS
                 }
             }
 
-            if (_status == 1) //new loop
+            if (_status == 1) //new _loop
             {
                 _frame = _start;
                 _frameElapsed = 0;
@@ -397,10 +369,10 @@ namespace HS
                         if (_times == 0)
                             _status = 2;  //ending
                         else
-                            _status = 1; //new loop
+                            _status = 1; //new _loop
                     }
                     else if (_start != 0)
-                        _status = 1; //new loop
+                        _status = 1; //new _loop
                 }
             }
         }

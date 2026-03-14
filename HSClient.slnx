@@ -1,14 +1,15 @@
 ﻿<Solution>
   <Project Path="YooAsset.csproj" />
-  <Project Path="YooAsset.Editor.csproj" />
   <Project Path="HS.csproj" />
-  <Project Path="spine-unity-editor.csproj" />
-  <Project Path="spine-unity.csproj" />
-  <Project Path="Assembly-CSharp.csproj" />
-  <Project Path="UnityWebSocket.Runtime.csproj" />
+  <Project Path="YooAsset.Editor.csproj" />
   <Project Path="Assembly-CSharp-firstpass.csproj" />
-  <Project Path="EnhancedScroller_asmdef.csproj" />
+  <Project Path="spine-unity.csproj" />
+  <Project Path="spine-unity-editor.csproj" />
+  <Project Path="Assembly-CSharp.csproj" />
   <Project Path="HSEditor.csproj" />
+  <Project Path="UnityWebSocket.Runtime.csproj" />
+  <Project Path="EnhancedScroller_asmdef.csproj" />
+  <Project Path="MessagePack.Unity.csproj" />
   <Project Path="Main.csproj" />
   <Project Path="UnityWebSocket.Editor.csproj" />
 </Solution>
